@@ -4,9 +4,8 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load .env from the repo root (or project root)
-# If your .env is somewhere else, adjust the path.
-load_dotenv(BASE_DIR / ".env")
+# Load .env from the repo root
+load_dotenv(BASE_DIR.parent / ".env")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
@@ -46,13 +45,9 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-
-        # Frontend templates live here:
-        # repo/frontend/templates/...
         'DIRS': [
             BASE_DIR.parent / "frontend" / "templates",
         ],
-
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,7 +68,7 @@ DATABASES = {
         'NAME': os.environ.get("DB_NAME", "desd_db"),
         'USER': os.environ.get("DB_USER", "desd_user"),
         'PASSWORD': os.environ.get("DB_PASSWORD", "desd_pass"),
-        'HOST': os.environ.get("DB_HOST", "db"),      # docker compose service name
+        'HOST': os.environ.get("DB_HOST", "db"),
         'PORT': os.environ.get("DB_PORT", "5432"),
     }
 }
@@ -96,14 +91,13 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (your separated frontend static folder)
+# Static files
 STATIC_URL = '/static/'
-
-# In dev, Django will discover static files here:
-# repo/frontend/static/...
 STATICFILES_DIRS = [
     BASE_DIR.parent / "frontend" / "static",
 ]
-
-# In prod, you run collectstatic into this directory:
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media (user uploaded files, e.g. product images)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

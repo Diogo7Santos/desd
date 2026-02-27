@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+
+  <div class="detail-card">
+
+    <!-- Image Section -->
+    <div class="detail-image">
+      {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+      {% else %}
+        <div class="image-placeholder">
+          <span>BRFN</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Info Section -->
+    <div class="detail-info">
+
+      <h1 class="detail-title">{{ product.name }}</h1>
+
+      <div class="detail-price">
+        £{{ product.price }} <span class="unit">/ {{ product.unit }}</span>
+      </div>
+
+      <div class="detail-badges">
+        <span class="badge">{{ product.get_category_display }}</span>
+        <span class="badge availability">
+          {{ product.get_availability_display }}
+        </span>
+      </div>
+
+      <div class="detail-description">
+        <h3>Description</h3>
+        <p>{{ product.description|default:"No description provided." }}</p>
+      </div>
+
+      <div class="detail-meta">
+        <p><strong>Producer:</strong> {{ product.producer.username }}</p>
+        <p><strong>Stock Available:</strong> {{ product.stock_quantity }}</p>
+
+        {% if product.harvest_date %}
+          <p><strong>Harvest Date:</strong> {{ product.harvest_date }}</p>
+        {% endif %}
+
+        <p>
+          <strong>Allergens:</strong>
+          {% if product.allergens %}
+            {{ product.allergens }}
+          {% else %}
+            None declared
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="detail-actions">
+        <a href="{% url 'catalog:product_list' %}" class="btn">
+          Back to Marketplace
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

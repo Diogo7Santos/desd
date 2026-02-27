@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}FoodNet{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<header class="navbar">
+    <div class="nav-container">
+
+        <!-- Logo -->
+        <a href="{% url 'catalog:product_list' %}" class="logo">
+            FoodNet
+        </a>
+
+        <!-- Navigation Links -->
+        <nav class="nav-links">
+            <a href="{% url 'catalog:product_list' %}">Marketplace</a>
+
+            {% if user.is_authenticated %}
+                {% if user.role == "producer" %}
+                    <a href="{% url 'catalog:product_create' %}">Add Product</a>
+                {% endif %}
+            {% endif %}
+        </nav>
+
+        <!-- Auth Section -->
+        <div class="auth-section">
+            {% if user.is_authenticated %}
+                <span class="user-label">
+                    {{ user.username }}
+                </span>
+                <a href="{% url 'logout' %}" class="btn-outline">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-outline">Login</a>
+            {% endif %}
+        </div>
+
+    </div>
+</header>
+
+<!-- Django Messages -->
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Main Content -->
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="footer-container">
+        © {{ now|date:"Y" }} FoodNet — Local Marketplace Platform
+    </div>
+</footer>
+
+</body>
+</html>
