@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Commission Report{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Commission Report</h2>
+    <p>Period: {{ report.start_date }} to {{ report.end_date }}</p>
+
+    <div class="cards">
+        <article class="card">
+            <h3>Total Gross</h3>
+            <p>{{ report.totals.gross }}</p>
+        </article>
+        <article class="card">
+            <h3>Total Commission</h3>
+            <p>{{ report.totals.commission }}</p>
+        </article>
+        <article class="card">
+            <h3>Total Net</h3>
+            <p>{{ report.totals.net }}</p>
+        </article>
+    </div>
+
+    <h3>By Producer</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Producer Ref</th>
+                <th>Gross</th>
+                <th>Commission</th>
+                <th>Net</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.by_producer %}
+            <tr>
+                <td>{{ row.producer_reference }}</td>
+                <td>{{ row.gross }}</td>
+                <td>{{ row.commission }}</td>
+                <td>{{ row.net }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No paid transactions in this period.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
