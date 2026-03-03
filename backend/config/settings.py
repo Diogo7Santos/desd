@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_DIR = BASE_DIR.parent # Assuming the structure is repo/backend/config/settings.py
 
 
 # Quick-start development settings - unsuitable for production
@@ -142,3 +143,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    REPO_DIR / 'frontend' / 'static',
+]
+TEMPLATES[0]["DIRS"] = [
+    REPO_DIR / 'frontend' / 'templates',
+]
+
+

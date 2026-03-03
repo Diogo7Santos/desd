@@ -19,5 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/accounts/", include("accounts.urls")),
+    path("", include("accounts.web_urls")), # Web views for accounts (login, register, dashboards)
+    path("api/accounts/", include("accounts.urls")), #DRF endpoints for accounts
 ]

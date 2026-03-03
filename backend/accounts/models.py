@@ -7,6 +7,7 @@ class User(AbstractUser):
     class Role(models.TextChoices):
         CUSTOMER = "CUSTOMER", "Customer"
         PRODUCER = "PRODUCER", "Producer"
+        ADMIN = "ADMIN", "Admin"
 
     # override email to enforce uniqueness
     email = models.EmailField(unique=True)
