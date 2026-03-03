@@ -107,12 +107,12 @@ body {
 }
 
 header.navbar {
-  color: #111;
+  color: black;
 }
 
 header.navbar a,
 header.navbar .logo,
 header.navbar .user-label,
 header.navbar a.btn-outline {
-  color: #111;
+  color: black;
 }
