@@ -16,6 +16,7 @@ class ProductForm(forms.ModelForm):
     - Stock is non-negative (PositiveIntegerField already enforces)
     - Harvest date defaults to today if not provided (matches test case "current date")
     - Allergen input is normalized (comma-separated string)
+    - Form fields render with consistent CSS classes (no template filters needed)
     """
 
     class Meta:
@@ -33,13 +34,64 @@ class ProductForm(forms.ModelForm):
             "image",
         ]
         widgets = {
-            "name": forms.TextInput(attrs={"placeholder": "e.g., Organic Free Range Eggs"}),
-            "description": forms.Textarea(attrs={"rows": 4}),
-            "price": forms.NumberInput(attrs={"step": "0.01", "min": "0.01"}),
-            "unit": forms.TextInput(attrs={"placeholder": "e.g., Dozen, kg, Jar"}),
-            "stock_quantity": forms.NumberInput(attrs={"min": 0}),
-            "allergens": forms.TextInput(attrs={"placeholder": "e.g., eggs, milk (leave blank if none)"}),
-            "harvest_date": forms.DateInput(attrs={"type": "date"}),
+            "name": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g., Organic Free Range Eggs",
+                }
+            ),
+            "category": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                }
+            ),
+            "price": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "step": "0.01",
+                    "min": "0.01",
+                }
+            ),
+            "unit": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g., Dozen, kg, Jar",
+                }
+            ),
+            "availability": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "stock_quantity": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                }
+            ),
+            "allergens": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g., eggs, milk (leave blank if none)",
+                }
+            ),
+            "harvest_date": forms.DateInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "date",
+                }
+            ),
+            "image": forms.ClearableFileInput(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
         }
 
     def clean_price(self):
