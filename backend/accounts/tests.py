@@ -12,7 +12,7 @@ class AccountsTestCases(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_tc001_register_producer(self):
+    def test_tc001_register_producer(self): # Expectation: User created with producer role
         resp = self.client.post(
             "/api/accounts/register/producer/",
             {"email": "p@example.com", "password": "StrongPass123!"},
@@ -22,7 +22,7 @@ class AccountsTestCases(TestCase):
         u = User.objects.get(email="p@example.com")
         self.assertEqual(u.role, User.Role.PRODUCER)
 
-    def test_tc002_register_customer(self):
+    def test_tc002_register_customer(self): # Expectation: User created with customer role
         resp = self.client.post(
             "/api/accounts/register/customer/",
             {"email": "c@example.com", "password": "StrongPass123!"},
@@ -32,7 +32,7 @@ class AccountsTestCases(TestCase):
         u = User.objects.get(email="c@example.com")
         self.assertEqual(u.role, User.Role.CUSTOMER)
 
-    def test_tc022_secure_authentication(self):
+    def test_tc022_secure_authentication(self): # Expectation: Password is hashed, unauthenticated access blocked, authenticated access allowed
         # register customer
         resp = self.client.post(
             "/api/accounts/register/customer/",
