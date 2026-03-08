@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_DIR = BASE_DIR.parent # Assuming the structure is repo/backend/config/settings.py
 
 # Load environment variables from .env (located at BASE_DIR/.env)
 load_dotenv(BASE_DIR / ".env")
@@ -145,6 +146,16 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    REPO_DIR / 'frontend' / 'static',
+]
+TEMPLATES[0]["DIRS"] = [
+    REPO_DIR / 'frontend' / 'templates',
+]
+
 # Payments (Stripe Test Mode)
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+
+
