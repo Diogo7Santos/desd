@@ -13,6 +13,10 @@ class PaymentRecordSerializer(serializers.ModelSerializer):
             "transaction_reference",
             "producer_reference",
             "customer_reference",
+            "payment_provider",
+            "provider_payment_id",
+            "checkout_session_id",
+            "checkout_session_url",
             "currency",
             "gross_amount",
             "commission_rate",
@@ -23,7 +27,29 @@ class PaymentRecordSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["commission_amount", "net_amount", "created_at", "updated_at"]
+        read_only_fields = [
+            "payment_provider",
+            "provider_payment_id",
+            "checkout_session_id",
+            "checkout_session_url",
+            "commission_amount",
+            "net_amount",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class StripeCheckoutSessionCreateSerializer(serializers.Serializer):
+    order_reference = serializers.CharField(max_length=100)
+    producer_reference = serializers.CharField(max_length=100)
+    customer_reference = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    gross_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0.01)
+    currency = serializers.CharField(max_length=3, default="GBP")
+    success_url = serializers.URLField()
+    cancel_url = serializers.URLField()
+
+    def validate_currency(self, value: str) -> str:
+        return value.upper()
 
 
 class SettlementItemSerializer(serializers.ModelSerializer):

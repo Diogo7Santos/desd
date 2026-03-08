@@ -7,6 +7,7 @@ from .models import PaymentRecord, SettlementBatch, SettlementItem
 class PaymentRecordAdmin(admin.ModelAdmin):
     list_display = (
         "transaction_reference",
+        "payment_provider",
         "order_reference",
         "producer_reference",
         "gross_amount",
@@ -16,7 +17,13 @@ class PaymentRecordAdmin(admin.ModelAdmin):
         "paid_at",
     )
     list_filter = ("status", "currency")
-    search_fields = ("transaction_reference", "order_reference", "producer_reference")
+    search_fields = (
+        "transaction_reference",
+        "order_reference",
+        "producer_reference",
+        "checkout_session_id",
+        "provider_payment_id",
+    )
     readonly_fields = ("commission_amount", "net_amount", "created_at", "updated_at")
 
 
