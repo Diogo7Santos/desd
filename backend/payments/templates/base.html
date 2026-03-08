@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Payments{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'payments/style.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <h1>Food Network Payments</h1>
+        <nav>
+            <a href="/p/payments/">Dashboard</a>
+            <a href="/p/payments/records/">Payment Records</a>
+            <a href="/p/payments/settlements/">Settlements</a>
+            <a href="/p/payments/reports/commission/">Commission Report</a>
+        </nav>
+    </header>
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
