@@ -3,6 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_DIR = BASE_DIR.parent # Assuming the structure is repo/backend/config/settings.py
 
 # Load .env from the repo root (desd/.env)
 load_dotenv(BASE_DIR / ".env")
@@ -111,3 +112,19 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media (user uploaded files, e.g. product images)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    REPO_DIR / 'frontend' / 'static',
+]
+TEMPLATES[0]["DIRS"] = [
+    REPO_DIR / 'frontend' / 'templates',
+]
+
+# Payments (Stripe Test Mode)
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+
+
