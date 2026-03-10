@@ -7,15 +7,10 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("", lambda request: redirect("catalog:product_list")),
     path("admin/", admin.site.urls),
-
-    # Django built-in login/logout/password URLs
-    path("accounts/", include("django.contrib.auth.urls")),
-
-    # Catalog
     path("catalog/", include("catalog.urls")),
-
-    # Your accounts API
-    path("api/accounts/", include("accounts.urls")),
+    path("p/", include("payments.urls")),
+    path("", include("accounts.urls")), # Web views for accounts (login, register, dashboards)
+    path("api/accounts/", include("accounts.urls")), #DRF endpoints for accounts
 ]
 
 if settings.DEBUG:

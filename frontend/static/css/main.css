@@ -73,6 +73,7 @@ small {
 
 a {
     color: var(--primary);
+    color: black;
     text-decoration: none;
     transition: 0.15s ease;
 }
@@ -87,12 +88,12 @@ a:hover {
 ========================= */
 
 .navbar {
-    background: var(--primary);
-    color: white;
+  background: white;
+  color: black;
 }
 
 .navbar a {
-    color: white;
+    color: black;
 }
 
 .navbar a:hover {
