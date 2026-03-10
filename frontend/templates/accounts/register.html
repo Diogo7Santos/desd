@@ -2,7 +2,7 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 560px;">
+<div class="container" style="max-width: 700px;">
   <div class="page-header">
     <h1 class="page-title">Register</h1>
     <p class="page-desc">Create an account as Customer, Producer, or Admin.</p>
@@ -16,21 +16,31 @@
         <div class="form-group">
           <label class="form-label">Username</label>
           {{ form.username }}
+          {{ form.username.errors }}
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
           {{ form.email }}
+          {{ form.email.errors }}
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        {{ form.phone }}
+        {{ form.phone.errors }}
       </div>
 
       <div class="grid grid-2">
         <div class="form-group">
           <label class="form-label">Password</label>
           {{ form.password1 }}
+          {{ form.password1.errors }}
         </div>
         <div class="form-group">
           <label class="form-label">Confirm Password</label>
           {{ form.password2 }}
+          {{ form.password2.errors }}
         </div>
       </div>
 
@@ -38,6 +48,65 @@
         <label class="form-label">Role</label>
         <div class="row">
           {{ form.role }}
+        </div>
+        {{ form.role.errors }}
+      </div>
+
+      <hr>
+
+      <h3>Producer details</h3>
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Business Name</label>
+          {{ form.business_name }}
+          {{ form.business_name.errors }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Name</label>
+          {{ form.contact_name }}
+          {{ form.contact_name.errors }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Producer Postcode</label>
+        {{ form.producer_postcode }}
+        {{ form.producer_postcode.errors }}
+      </div>
+
+      <hr>
+
+      <h3>Customer details</h3>
+      <div class="form-group">
+        <label class="form-label">Customer Type</label>
+        <div class="row">
+          {{ form.customer_type_id }}
+        </div>
+        {{ form.customer_type_id.errors }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Address Line 1</label>
+        {{ form.line_1 }}
+        {{ form.line_1.errors }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Address Line 2</label>
+        {{ form.line_2 }}
+        {{ form.line_2.errors }}
+      </div>
+
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">City</label>
+          {{ form.city }}
+          {{ form.city.errors }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Customer Postcode</label>
+          {{ form.customer_postcode }}
+          {{ form.customer_postcode.errors }}
         </div>
       </div>
 

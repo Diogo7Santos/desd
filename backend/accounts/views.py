@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from .models import ProducerProfile, CustomerProfile, Address
 
 from .web_forms import LoginForm, RegisterForm
 
@@ -64,16 +65,21 @@ def register_page(request):
             email = form.cleaned_data["email"].lower()
             role = form.cleaned_data["role"]
             password = form.cleaned_data["password1"]
+            phone = form.cleaned_data.get("phone", "")
 
             if User.objects.filter(username=username).exists():
                 form.add_error("username", "Username already taken.")
             elif User.objects.filter(email=email).exists():
                 form.add_error("email", "Email already registered.")
             else:
-                user = User.objects.create_user(username=username, email=email, password=password)
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                )
                 user.role = role
+                user.phone = phone
 
-                # Admin registration: allow only in DEBUG to avoid obvious security issues.
                 if role == User.Role.ADMIN:
                     if not settings.DEBUG:
                         return HttpResponseForbidden("Admin registration is disabled.")
@@ -81,13 +87,36 @@ def register_page(request):
                     user.is_superuser = True
 
                 user.save()
+
+                if role == User.Role.PRODUCER:
+                    ProducerProfile.objects.create(
+                        user=user,
+                        business_name=form.cleaned_data["business_name"],
+                        contact_name=form.cleaned_data["contact_name"],
+                        postcode=form.cleaned_data["producer_postcode"],
+                    )
+
+                elif role == User.Role.CUSTOMER:
+                    address = Address.objects.create(
+                        user=user,
+                        line_1=form.cleaned_data["line_1"],
+                        line_2=form.cleaned_data.get("line_2", ""),
+                        city=form.cleaned_data["city"],
+                        postcode=form.cleaned_data["customer_postcode"],
+                    )
+
+                    CustomerProfile.objects.create(
+                        user=user,
+                        customer_type_id=int(form.cleaned_data["customer_type_id"]),
+                        address=address,
+                    )
+
                 login(request, user)
                 return _redirect_by_user_role(user)
     else:
         form = RegisterForm()
 
     return render(request, "accounts/register.html", {"form": form})
-
 
 @login_required
 def logout_page(request):
