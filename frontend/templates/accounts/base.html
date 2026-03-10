@@ -1,0 +1,50 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Foodnet{% endblock %}</title>
+
+  <!-- Entry styles -->
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <!-- Optional overrides (navbar/messages/footer) -->
+  <link rel="stylesheet" href="{% static 'css/global.css' %}">
+</head>
+
+<body class="page">
+  <header class="navbar">
+    <div class="nav-container">
+      <a class="logo" href="{% url 'login' %}">FoodNet</a>
+
+      <div class="auth-section">
+        {% if request.user.is_authenticated %}
+          <span class="user-label">{{ request.user.username }}</span>
+          <a class="btn-outline" href="{% url 'logout' %}">Logout</a>
+        {% else %}
+          <a class="btn-outline" href="{% url 'login' %}">Login</a>
+          <a class="btn-outline" href="{% url 'register' %}">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+  <div class="messages-container">
+    {% for message in messages %}
+      <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="main-content page-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    Bristol Regional Food Network 
+  </footer>
+</body>
+</html>
