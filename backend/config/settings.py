@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env from the repo root (desd/.env)
-load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-me")
 
@@ -111,9 +111,3 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media (user uploaded files, e.g. product images)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-# Optional: helps if you later enable CSRF protection on forms and access via localhost
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost,http://127.0.0.1").split(",")
-    if o.strip()
-]
