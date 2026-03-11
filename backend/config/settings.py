@@ -125,6 +125,3 @@ TEMPLATES[0]["DIRS"] = [
 # Payments (Stripe Test Mode)
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-
-
-
