@@ -2,33 +2,29 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 700px;">
+<div class="container" style="max-width: 760px;">
   <div class="page-header">
     <h1 class="page-title">Register</h1>
-    <p class="page-desc">Create an account as Customer, Producer, or Admin.</p>
+    <p class="page-desc">Create a customer or producer account.</p>
   </div>
 
   <div class="card">
     <form method="post">
       {% csrf_token %}
 
+      {{ form.non_field_errors }}
+
       <div class="grid grid-2">
-        <div class="form-group">
-          <label class="form-label">Username</label>
-          {{ form.username }}
-          {{ form.username.errors }}
-        </div>
         <div class="form-group">
           <label class="form-label">Email</label>
           {{ form.email }}
           {{ form.email.errors }}
         </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Phone</label>
-        {{ form.phone }}
-        {{ form.phone.errors }}
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          {{ form.phone }}
+          {{ form.phone.errors }}
+        </div>
       </div>
 
       <div class="grid grid-2">
@@ -36,6 +32,7 @@
           <label class="form-label">Password</label>
           {{ form.password1 }}
           {{ form.password1.errors }}
+          <small>Minimum 8 characters. Avoid common or numeric-only passwords.</small>
         </div>
         <div class="form-group">
           <label class="form-label">Confirm Password</label>
@@ -45,7 +42,7 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Role</label>
+        <label class="form-label">Account Type</label>
         <div class="row">
           {{ form.role }}
         </div>
@@ -55,6 +52,7 @@
       <hr>
 
       <h3>Producer details</h3>
+
       <div class="grid grid-2">
         <div class="form-group">
           <label class="form-label">Business Name</label>
@@ -69,7 +67,13 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Producer Postcode</label>
+        <label class="form-label">Business Address</label>
+        {{ form.business_address }}
+        {{ form.business_address.errors }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Business Postcode</label>
         {{ form.producer_postcode }}
         {{ form.producer_postcode.errors }}
       </div>
@@ -77,6 +81,13 @@
       <hr>
 
       <h3>Customer details</h3>
+
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        {{ form.full_name }}
+        {{ form.full_name.errors }}
+      </div>
+
       <div class="form-group">
         <label class="form-label">Customer Type</label>
         <div class="row">
@@ -104,10 +115,17 @@
           {{ form.city.errors }}
         </div>
         <div class="form-group">
-          <label class="form-label">Customer Postcode</label>
+          <label class="form-label">Postcode</label>
           {{ form.customer_postcode }}
           {{ form.customer_postcode.errors }}
         </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          {{ form.accept_terms }} I accept the terms and conditions
+        </label>
+        {{ form.accept_terms.errors }}
       </div>
 
       <div class="row-between mt-16">
