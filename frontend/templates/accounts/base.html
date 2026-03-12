@@ -19,8 +19,11 @@
 
       <div class="auth-section">
         {% if request.user.is_authenticated %}
-          <span class="user-label">{{ request.user.username }}</span>
-          <a class="btn-outline" href="{% url 'logout' %}">Logout</a>
+          <span class="user-label">{{ request.user.email|default:request.user.username }}</span>
+          <form method="post" action="{% url 'logout' %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn-outline" type="submit">Logout</button>
+          </form>
         {% else %}
           <a class="btn-outline" href="{% url 'login' %}">Login</a>
           <a class="btn-outline" href="{% url 'register' %}">Register</a>

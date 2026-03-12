@@ -29,6 +29,7 @@ class ProducerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="producer_profile")
     business_name = models.CharField(max_length=255)
     contact_name = models.CharField(max_length=255)
+    business_address = models.CharField(max_length=255)
     postcode = models.CharField(max_length=20)
 
     def __str__(self):
