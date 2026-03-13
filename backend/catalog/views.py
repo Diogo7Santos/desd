@@ -18,9 +18,9 @@ def _is_producer(user) -> bool:
     Best-effort producer check that works across common account designs.
 
     Supported patterns:
-    - user.role == "producer"
+    - user.role == "producer" / "PRODUCER"
     - user.is_producer == True
-    - user.producerprofile exists (OneToOne)
+    - user.producerprofile exists
     """
     if not user or not user.is_authenticated:
         return False
@@ -39,7 +39,10 @@ def _is_producer(user) -> bool:
 
 
 def _available_products_qs():
-    """TC-004: Only products marked as Available/In Season should be shown to customers."""
+    """
+    Customer-facing queryset:
+    only products currently marked as AVAILABLE are shown publicly.
+    """
     return Product.objects.filter(availability=Product.Availability.AVAILABLE)
 
 
@@ -127,6 +130,28 @@ def product_detail(request: HttpRequest, pk: int) -> HttpResponse:
 # ----------------------------
 
 @login_required
+def producer_products(request: HttpRequest) -> HttpResponse:
+    """
+    Producer dashboard page:
+    shows only products owned by the logged-in producer.
+    """
+    if not _is_producer(request.user):
+        raise PermissionDenied("Only producers can manage products.")
+
+    products = (
+        Product.objects.filter(producer=request.user)
+        .select_related("producer")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "pages/producer_products.html",
+        {"products": products},
+    )
+
+
+@login_required
 def product_create(request: HttpRequest) -> HttpResponse:
     if not _is_producer(request.user):
         raise PermissionDenied("Only producers can add products.")
@@ -138,9 +163,55 @@ def product_create(request: HttpRequest) -> HttpResponse:
             product.producer = request.user
             product.save()
             messages.success(request, "Product created successfully.")
-            return redirect("catalog:product_detail", pk=product.pk)
+            return redirect("catalog:producer_products")
         messages.error(request, "Please correct the errors below.")
     else:
         form = ProductForm()
 
-    return render(request, "pages/product_form.html", {"form": form})
+    context = {
+        "form": form,
+        "form_title": "Add New Product",
+        "form_subtitle": "Create a new listing for customers to browse and purchase.",
+        "submit_label": "Save Product",
+        "cancel_url": "catalog:producer_products",
+    }
+    return render(request, "pages/product_form.html", context)
+
+
+@login_required
+def product_update(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    Producer can edit only their own products.
+    Supports TC-011, TC-015, and TC-016 by allowing updates to:
+    - stock_quantity
+    - allergens
+    - availability
+    - and all other product details
+    """
+    if not _is_producer(request.user):
+        raise PermissionDenied("Only producers can edit products.")
+
+    product = get_object_or_404(Product, pk=pk)
+
+    if product.producer != request.user:
+        raise PermissionDenied("You can only edit your own products.")
+
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Product updated successfully.")
+            return redirect("catalog:producer_products")
+        messages.error(request, "Please correct the errors below.")
+    else:
+        form = ProductForm(instance=product)
+
+    context = {
+        "form": form,
+        "product": product,
+        "form_title": "Edit Product",
+        "form_subtitle": "Update stock, allergens, seasonal availability, and other product details.",
+        "submit_label": "Update Product",
+        "cancel_url": "catalog:producer_products",
+    }
+    return render(request, "pages/product_form.html", context)
