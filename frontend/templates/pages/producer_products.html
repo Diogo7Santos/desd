@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Producer Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="catalog-wrap">
+
+  <div class="catalog-header">
+    <div class="catalog-header-top">
+
+      <div class="catalog-title">
+        <h1>Producer Dashboard</h1>
+        <p class="catalog-subtitle">
+          Manage your products, update stock, allergens, and seasonal availability.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a class="btn" href="{% url 'catalog:product_list' %}">
+          Back to Marketplace
+        </a>
+        <a class="btn btn-primary" href="{% url 'catalog:product_create' %}">
+          Add Product
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  {% if products %}
+    <div class="catalog-grid">
+      {% for product in products %}
+        <div class="product-card">
+
+          <div class="product-thumb">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+              <span>BRFN</span>
+            {% endif %}
+          </div>
+
+          <div style="flex: 1;">
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-price">£{{ product.price }}</div>
+
+            <div class="badges">
+              <span class="badge">{{ product.get_category_display }}</span>
+              <span class="badge">{{ product.get_availability_display }}</span>
+              <span class="badge">Stock: {{ product.stock_quantity }}</span>
+            </div>
+
+            <div style="margin-top: 10px; font-size: 14px; color: rgba(0,0,0,0.75);">
+              <p style="margin: 4px 0;">
+                <strong>Allergens:</strong>
+                {% if product.allergens %}
+                  {{ product.allergens }}
+                {% else %}
+                  No common allergens
+                {% endif %}
+              </p>
+
+              {% if product.harvest_date %}
+                <p style="margin: 4px 0;">
+                  <strong>Harvest Date:</strong> {{ product.harvest_date }}
+                </p>
+              {% endif %}
+            </div>
+
+            <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <a class="btn" href="{% url 'catalog:product_detail' pk=product.pk %}">
+                View
+              </a>
+              <a class="btn btn-primary" href="{% url 'catalog:product_update' pk=product.pk %}">
+                Edit Product
+              </a>
+            </div>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="margin-top: 18px; padding: 24px; border: 1px solid rgba(0,0,0,0.1); border-radius: 16px; background: white;">
+      <h3 style="margin-top: 0;">No products added yet</h3>
+      <p style="margin-bottom: 16px; color: rgba(0,0,0,0.7);">
+        You have not created any product listings yet. Start by adding your first product.
+      </p>
+      <a class="btn btn-primary" href="{% url 'catalog:product_create' %}">
+        Add Your First Product
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
