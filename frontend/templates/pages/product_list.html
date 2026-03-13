@@ -26,10 +26,10 @@
         <button class="btn" type="submit">Search</button>
       </form>
 
-      {% if request.user.is_authenticated %}
+      {% if request.user.is_authenticated and request.user.role == "PRODUCER" %}
         <a class="btn btn-primary"
-           href="{% url 'catalog:product_create' %}">
-          Add Product
+           href="{% url 'catalog:producer_products' %}">
+          Producer Dashboard
         </a>
       {% endif %}
 
