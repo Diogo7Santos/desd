@@ -58,6 +58,20 @@ class CustomerProfile(models.Model):
     customer_type_id = models.IntegerField(choices=CustomerType.choices)
     address = models.OneToOneField(Address, on_delete=models.CASCADE, related_name="customer_profile")
 
+    organisation_name = models.CharField(max_length=255, blank=True)
+    contact_person = models.CharField(max_length=255, blank=True)
+    is_charity_or_education = models.BooleanField(default=False)
+    is_business_verified = models.BooleanField(default=False)
+    default_delivery_instructions = models.TextField(blank=True)
+
     def __str__(self):
         return f"{self.user.username} ({self.get_customer_type_id_display()})"
+
+    @property
+    def is_restaurant(self):
+        return self.customer_type_id == self.CustomerType.RESTAURANT
+
+    @property
+    def is_community_group(self):
+        return self.customer_type_id == self.CustomerType.COMMUNITY_GROUP
 # Create your models here.

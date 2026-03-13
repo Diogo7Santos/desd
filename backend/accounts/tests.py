@@ -222,3 +222,67 @@ class AccountsTestCases(TestCase):
 
         final_logout = self.client.post(reverse("logout"), follow=True)
         self.assertRedirects(final_logout, reverse("login"))
+
+def test_tc017_register_community_group_account(self):
+    response = self.client.post(
+        reverse("register"),
+        data={
+            "email": "catering@stmarys-school.org.uk",
+            "phone": "01179000000",
+            "password1": "StrongPass123!",
+            "password2": "StrongPass123!",
+            "role": User.Role.CUSTOMER,
+            "full_name": "School Catering",
+            "customer_type_id": str(CustomerProfile.CustomerType.COMMUNITY_GROUP),
+            "organisation_name": "St. Mary's School",
+            "contact_person": "Kitchen Manager",
+            "is_charity_or_education": "on",
+            "default_delivery_instructions": "Delivery to kitchen entrance",
+            "line_1": "45 School Lane",
+            "line_2": "",
+            "city": "Bristol",
+            "customer_postcode": "BS1 5JG",
+            "accept_terms": "on",
+        },
+        follow=True,
+    )
+
+    self.assertRedirects(response, reverse("customer_home"))
+    user = User.objects.get(email="catering@stmarys-school.org.uk")
+    profile = user.customer_profile
+
+    self.assertEqual(profile.customer_type_id, CustomerProfile.CustomerType.COMMUNITY_GROUP)
+    self.assertEqual(profile.organisation_name, "St. Mary's School")
+    self.assertEqual(profile.contact_person, "Kitchen Manager")
+    self.assertTrue(profile.is_charity_or_education)
+    self.assertFalse(profile.is_business_verified)
+
+def test_tc018_register_restaurant_account_requires_business_fields(self):
+    response = self.client.post(
+        reverse("register"),
+        data={
+            "email": "orders@cliftonkitchen.co.uk",
+            "phone": "01179000001",
+            "password1": "StrongPass123!",
+            "password2": "StrongPass123!",
+            "role": User.Role.CUSTOMER,
+            "full_name": "Restaurant Owner",
+            "customer_type_id": str(CustomerProfile.CustomerType.RESTAURANT),
+            "line_1": "10 Clifton Road",
+            "line_2": "",
+            "city": "Bristol",
+            "customer_postcode": "BS8 1AB",
+            "accept_terms": "on",
+        },
+    )
+
+    self.assertEqual(response.status_code, 200)
+    self.assertContains(response, "This field is required for restaurant accounts.")
+
+def test_tc021_account_page_available_to_logged_in_customer(self):
+    user = self.create_customer_user(email="history@example.com")
+    self.client.login(username=user.email, password="StrongPass123!")
+
+    response = self.client.get(reverse("account"))
+    self.assertEqual(response.status_code, 200)
+    self.assertContains(response, "My Account")
