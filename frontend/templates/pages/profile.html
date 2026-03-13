@@ -1,0 +1,147 @@
+{% extends "front_end/base.html" %}
+
+{% block title %}My Profile | Local Food Marketplace{% endblock %}
+
+{% block content %}
+
+<section style="max-width:720px; margin:30px auto;">
+
+    <h1 style="margin-bottom:5px;">My Profile</h1>
+    <p style="margin-top:0; color:#666;">
+        Manage your personal information and account settings.
+    </p>
+
+    <!-- PROFILE CARD -->
+    <div style="
+        border:1px solid #eee;
+        border-radius:10px;
+        background:#fff;
+        padding:20px;
+        margin-top:20px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    ">
+
+        <h2 style="margin-top:0;">Account Information</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div style="margin-bottom:14px;">
+                <label style="font-weight:600;">Username</label>
+                <input
+                    type="text"
+                    name="username"
+                    value="{{ user.username }}"
+                    disabled
+                    style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; background:#f5f5f5;"
+                >
+            </div>
+
+            <!-- First Name -->
+            <div style="margin-bottom:14px;">
+                <label style="font-weight:600;">First Name</label>
+                <input
+                    type="text"
+                    name="first_name"
+                    value="{{ user.first_name }}"
+                    style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;"
+                >
+            </div>
+
+            <!-- Last Name -->
+            <div style="margin-bottom:14px;">
+                <label style="font-weight:600;">Last Name</label>
+                <input
+                    type="text"
+                    name="last_name"
+                    value="{{ user.last_name }}"
+                    style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;"
+                >
+            </div>
+
+            <!-- Email -->
+            <div style="margin-bottom:14px;">
+                <label style="font-weight:600;">Email</label>
+                <input
+                    type="email"
+                    name="email"
+                    value="{{ user.email }}"
+                    style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;"
+                >
+            </div>
+
+            <!-- Role -->
+            <div style="margin-bottom:18px;">
+                <label style="font-weight:600;">Account Role</label>
+                <input
+                    type="text"
+                    value="{{ role|title }}"
+                    disabled
+                    style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; background:#f5f5f5;"
+                >
+            </div>
+
+            <button type="submit" style="
+                padding:10px 18px;
+                background:#2e7d32;
+                color:white;
+                border:none;
+                border-radius:6px;
+                font-weight:600;
+                cursor:pointer;
+            ">
+                Update Profile
+            </button>
+        </form>
+    </div>
+
+    <!-- PASSWORD UPDATE -->
+    <div style="
+        border:1px solid #eee;
+        border-radius:10px;
+        background:#fff;
+        padding:20px;
+        margin-top:20px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    ">
+        <h2 style="margin-top:0;">Change Password</h2>
+
+        <form method="POST" action="{% url 'change_password' %}">
+            {% csrf_token %}
+
+            <div style="margin-bottom:12px;">
+                <label style="font-weight:600;">Current Password</label>
+                <input type="password" name="current_password" required
+                       style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-weight:600;">New Password</label>
+                <input type="password" name="new_password" required
+                       style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+            </div>
+
+            <div style="margin-bottom:18px;">
+                <label style="font-weight:600;">Confirm New Password</label>
+                <input type="password" name="confirm_password" required
+                       style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+            </div>
+
+            <button type="submit" style="
+                padding:10px 18px;
+                background:#1565c0;
+                color:white;
+                border:none;
+                border-radius:6px;
+                font-weight:600;
+                cursor:pointer;
+            ">
+                Change Password
+            </button>
+        </form>
+    </div>
+
+</section>
+
+{% endblock %}
