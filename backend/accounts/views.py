@@ -33,8 +33,8 @@ def _redirect_by_user_role(user):
     if _has_role(user, User.Role.ADMIN):
         return redirect("admin_home")
     if _has_role(user, User.Role.PRODUCER):
-        return redirect("producer_home")
-    return redirect("customer_home")
+        return redirect("catalog:producer_products")
+    return redirect("catalog:product_list")
 
 
 def _is_locked_out(request):
@@ -187,8 +187,7 @@ def register_page(request):
 def logout_page(request):
     logout(request)
     messages.success(request, "You have been logged out.")
-    return redirect("login")
-
+    return redirect("/")
 
 @login_required
 def customer_home(request):
