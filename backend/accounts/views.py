@@ -1,5 +1,4 @@
 import logging
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
@@ -8,9 +7,14 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-
 from .models import ProducerProfile, CustomerProfile, Address
 from .web_forms import LoginForm, RegisterForm
+from django.db import transaction
+from .web_forms import (
+    LoginForm, RegisterForm,
+    UserAccountForm, ProducerAccountForm,
+    CustomerAccountForm, AddressForm,
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -143,6 +147,13 @@ def register_page(request):
             )
 
         elif role == User.Role.CUSTOMER:
+            full_name = form.cleaned_data.get("full_name", "").strip()
+            if full_name and not user.first_name:
+                parts = full_name.split(maxsplit=1)
+                user.first_name = parts[0]
+                user.last_name = parts[1] if len(parts) > 1 else ""
+                user.save()
+
             address = Address.objects.create(
                 user=user,
                 line_1=form.cleaned_data["line_1"],
@@ -151,10 +162,17 @@ def register_page(request):
                 postcode=form.cleaned_data["customer_postcode"],
             )
 
+            customer_type_id = int(form.cleaned_data["customer_type_id"])
+
             CustomerProfile.objects.create(
                 user=user,
-                customer_type_id=int(form.cleaned_data["customer_type_id"]),
+                customer_type_id=customer_type_id,
                 address=address,
+                organisation_name=form.cleaned_data.get("organisation_name", ""),
+                contact_person=form.cleaned_data.get("contact_person", ""),
+                is_charity_or_education=form.cleaned_data.get("is_charity_or_education", False),
+                default_delivery_instructions=form.cleaned_data.get("default_delivery_instructions", ""),
+                is_business_verified=(customer_type_id == CustomerProfile.CustomerType.INDIVIDUAL),
             )
 
         login(request, user)
@@ -199,3 +217,105 @@ def admin_home(request):
     if not _has_role(request.user, User.Role.ADMIN):
         return HttpResponseForbidden("Forbidden: admin only.")
     return render(request, "accounts/admin_home.html")
+
+@login_required
+def account_page(request):
+    user = request.user
+    producer_profile = getattr(user, "producer_profile", None)
+    customer_profile = getattr(user, "customer_profile", None)
+    address = customer_profile.address if customer_profile else None
+
+    if request.method == "POST":
+        user_form = UserAccountForm(request.POST, instance=user, prefix="user")
+        producer_form = (
+            ProducerAccountForm(request.POST, instance=producer_profile, prefix="producer")
+            if producer_profile else None
+        )
+        customer_form = (
+            CustomerAccountForm(request.POST, instance=customer_profile, prefix="customer")
+            if customer_profile else None
+        )
+        address_form = (
+            AddressForm(request.POST, instance=address, prefix="address")
+            if address else None
+        )
+
+        forms_valid = user_form.is_valid()
+        if producer_form is not None:
+            forms_valid = forms_valid and producer_form.is_valid()
+        if customer_form is not None:
+            forms_valid = forms_valid and customer_form.is_valid()
+        if address_form is not None:
+            forms_valid = forms_valid and address_form.is_valid()
+
+        if forms_valid:
+            with transaction.atomic():
+                user = user_form.save(commit=False)
+                user.username = user.email
+                user.save()
+
+                if producer_form is not None:
+                    producer_form.save()
+                if customer_form is not None:
+                    customer_form.save()
+                if address_form is not None:
+                    address_form.save()
+
+            messages.success(request, "Account details updated successfully.")
+            return redirect("account")
+        else:
+            messages.error(request, "Please correct the errors below.")
+
+    else:
+        user_form = UserAccountForm(instance=user, prefix="user")
+        producer_form = (
+            ProducerAccountForm(instance=producer_profile, prefix="producer")
+            if producer_profile else None
+        )
+        customer_form = (
+            CustomerAccountForm(instance=customer_profile, prefix="customer")
+            if customer_profile else None
+        )
+        address_form = (
+            AddressForm(instance=address, prefix="address")
+            if address else None
+        )
+
+    return render(
+        request,
+        "accounts/account.html",
+        {
+            "user_form": user_form,
+            "producer_form": producer_form,
+            "customer_form": customer_form,
+            "address_form": address_form,
+        },
+    )
+
+def is_verified_business_customer(user):
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id in [
+            CustomerProfile.CustomerType.RESTAURANT,
+            CustomerProfile.CustomerType.COMMUNITY_GROUP,
+        ]
+        and user.customer_profile.is_business_verified
+    )
+
+def is_restaurant_customer(user):
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.RESTAURANT
+    )
+
+def is_community_group_customer(user):
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.COMMUNITY_GROUP
+    )
