@@ -116,3 +116,13 @@ header.navbar .user-label,
 header.navbar a.btn-outline {
   color: black;
 }
+
+.auth-section button.btn-outline {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.15);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
