@@ -33,8 +33,8 @@ def _redirect_by_user_role(user):
     if _has_role(user, User.Role.ADMIN):
         return redirect("admin_home")
     if _has_role(user, User.Role.PRODUCER):
-        return redirect("producer_home")
-    return redirect("customer_home")
+        return redirect("catalog:producer_products")
+    return redirect("catalog:product_list")
 
 
 def _is_locked_out(request):
@@ -79,7 +79,13 @@ def login_page(request):
             messages.error(request, "Too many failed login attempts. Please try again later.")
             return render(request, "accounts/login.html", {"form": form})
 
-        user = authenticate(request, username=email, password=password)
+        user = None
+
+        try:
+            matched_user = User.objects.get(email__iexact=email)
+            user = authenticate(request, username=matched_user.username, password=password)
+        except User.DoesNotExist:
+            user = None
 
         if user is None:
             _record_failed_login(request, email)
@@ -187,8 +193,7 @@ def register_page(request):
 def logout_page(request):
     logout(request)
     messages.success(request, "You have been logged out.")
-    return redirect("login")
-
+    return redirect("/")
 
 @login_required
 def customer_home(request):

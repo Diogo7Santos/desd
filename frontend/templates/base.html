@@ -26,7 +26,7 @@
             <a href="{% url 'catalog:product_list' %}">Marketplace</a>
 
             {% if user.is_authenticated %}
-                {% if user.role == "producer" %}
+                 {% if user.role == "PRODUCER" %}
                     <a href="{% url 'catalog:product_create' %}">Add Product</a>
                 {% endif %}
             {% endif %}
@@ -34,13 +34,18 @@
 
         <!-- Auth Section -->
         <div class="auth-section">
-            {% if user.is_authenticated %}
+            {% if request.user.is_authenticated %}
                 <span class="user-label">
-                    {{ user.username }}
+                    {{ request.user.email|default:request.user.username }}
                 </span>
-                <a href="{% url 'logout' %}" class="btn-outline">Logout</a>
+                <a class="btn-outline" href="{% url 'account' %}">My Account</a>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-outline">Logout</button>
+                </form>
             {% else %}
                 <a href="{% url 'login' %}" class="btn-outline">Login</a>
+                <a href="{% url 'register' %}" class="btn-outline">Register</a>
             {% endif %}
         </div>
 
