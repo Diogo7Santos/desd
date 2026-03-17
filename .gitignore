@@ -17,3 +17,5 @@ staticfiles/
 .DS_Store
 .vscode/
 .idea/
+postman
+.postman
