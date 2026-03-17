@@ -3,9 +3,15 @@
 
 {% block title %}Checkout{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h1>Checkout</h1>
+<div class="checkout-container">
+    <div class="checkout-header">
+        <h1><i class="bi bi-credit-card"></i> Checkout</h1>
+    </div>
 
     {% if messages %}
     {% for message in messages %}
@@ -19,17 +25,15 @@
     <div class="row">
         <div class="col-lg-8">
             {% if producer_count > 1 %}
-            <div class="alert alert-info">
-                <strong>Multi-Vendor Order:</strong> Your order contains items from {{ producer_count }} producers. Each
+            <div class="multi-vendor-alert">
+                <strong><i class="bi bi-info-circle"></i> Multi-Vendor Order:</strong> Your order contains items from {{ producer_count }} producers. Each
                 will deliver separately according to their schedule.
             </div>
             {% endif %}
 
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Delivery Information</h5>
-                </div>
-                <div class="card-body">
+            <div class="checkout-form-card">
+                <h5><i class="bi bi-geo-alt"></i> Delivery Information</h5>
+                <div>
                     <form method="post" action="{% url 'orders:place_order' %}">
                         {% csrf_token %}
 
@@ -61,10 +65,10 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <button type="submit" class="btn-place-order">
                                 <i class="bi bi-check-circle"></i> Place Order (£{{ total_price }})
                             </button>
-                            <a href="{% url 'cart:view_cart' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'cart:view_cart' %}" class="btn-back-cart">
                                 <i class="bi bi-arrow-left"></i> Back to Cart
                             </a>
                         </div>
@@ -74,27 +78,23 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Order Summary</h5>
-                </div>
-                <div class="card-body">
-                    {% for producer, items in items_by_producer.items %}
-                    <div class="mb-3 pb-3 border-bottom">
-                        <h6 class="text-success">{{ producer.username }}</h6>
-                        {% for item in items %}
-                        <div class="d-flex justify-content-between small">
-                            <span>{{ item.quantity }}x {{ item.product.name }}</span>
-                            <span>£{{ item.subtotal }}</span>
-                        </div>
-                        {% endfor %}
+            <div class="order-summary-card">
+                <h5><i class="bi bi-receipt"></i> Order Summary</h5>
+                {% for producer, items in items_by_producer.items %}
+                <div class="producer-section">
+                    <div class="producer-name"><i class="bi bi-shop"></i> {{ producer.username }}</div>
+                    {% for item in items %}
+                    <div class="summary-item">
+                        <span>{{ item.quantity }}x {{ item.product.name }}</span>
+                        <span>£{{ item.subtotal }}</span>
                     </div>
                     {% endfor %}
+                </div>
+                {% endfor %}
 
-                    <div class="d-flex justify-content-between">
-                        <h5>Total:</h5>
-                        <h5 class="text-success">£{{ total_price }}</h5>
-                    </div>
+                <div class="summary-total">
+                    <span>Total:</span>
+                    <span class="amount">£{{ total_price }}</span>
                 </div>
             </div>
         </div>

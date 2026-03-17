@@ -34,9 +34,12 @@
                         <i class="bi bi-calendar"></i> Placed on {{ order_data.order.created_at|date:"F d, Y" }} at {{ order_data.order.created_at|date:"H:i" }}
                     </small>
                 </div>
-                <span class="status-badge-large status-{{ order_data.order.status|lower }}">
-                    {{ order_data.order.get_status_display }}
-                </span>
+                <div>
+                    <small class="text-muted d-block mb-1">Your Items Status:</small>
+                    <span class="status-badge-large status-{{ order_data.items.0.status|lower }}">
+                        {{ order_data.items.0.get_status_display }}
+                    </span>
+                </div>
             </div>
         </div>
         <div class="order-body">
@@ -113,10 +116,10 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold">New Status:</label>
                             <select name="status" class="form-select form-select-lg">
-                                <option value="PENDING" {% if order_data.order.status == 'PENDING' %}selected{% endif %}>⏳ Pending</option>
-                                <option value="CONFIRMED" {% if order_data.order.status == 'CONFIRMED' %}selected{% endif %}>✅ Confirmed</option>
-                                <option value="READY" {% if order_data.order.status == 'READY' %}selected{% endif %}>📦 Ready for Delivery</option>
-                                <option value="DELIVERED" {% if order_data.order.status == 'DELIVERED' %}selected{% endif %}>🚚 Delivered</option>
+                                <option value="PENDING" {% if order_data.items.0.status == 'PENDING' %}selected{% endif %}>⏳ Pending</option>
+                                <option value="CONFIRMED" {% if order_data.items.0.status == 'CONFIRMED' %}selected{% endif %}>✅ Confirmed</option>
+                                <option value="READY" {% if order_data.items.0.status == 'READY' %}selected{% endif %}>📦 Ready for Delivery</option>
+                                <option value="DELIVERED" {% if order_data.items.0.status == 'DELIVERED' %}selected{% endif %}>🚚 Delivered</option>
                             </select>
                         </div>
                         <div class="col-md-8">
