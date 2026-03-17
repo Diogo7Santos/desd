@@ -79,7 +79,12 @@ def login_page(request):
             messages.error(request, "Too many failed login attempts. Please try again later.")
             return render(request, "accounts/login.html", {"form": form})
 
-        user = authenticate(request, username=email, password=password)
+        # Look up user by email to get username for authentication
+        try:
+            user_obj = User.objects.get(email=email)
+            user = authenticate(request, username=user_obj.username, password=password)
+        except User.DoesNotExist:
+            user = None
 
         if user is None:
             _record_failed_login(request, email)
