@@ -16,6 +16,7 @@ class Order(models.Model):
     TC-021: Order history
     """
     class Status(models.TextChoices):
+        PENDING_PAYMENT = "PENDING_PAYMENT", "Pending Payment"
         PENDING = "PENDING", "Pending"
         CONFIRMED = "CONFIRMED", "Confirmed"
         READY = "READY", "Ready for Collection/Delivery"

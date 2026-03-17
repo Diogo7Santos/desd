@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PaymentRecord, SettlementBatch, SettlementItem
+from .models import PaymentRecord, ProcessedWebhookEvent, SettlementBatch, SettlementItem
 
 
 @admin.register(PaymentRecord)
@@ -46,3 +46,9 @@ class SettlementBatchAdmin(admin.ModelAdmin):
 class SettlementItemAdmin(admin.ModelAdmin):
     list_display = ("id", "settlement", "payment_record", "created_at")
     search_fields = ("settlement__producer_reference", "payment_record__transaction_reference")
+
+
+@admin.register(ProcessedWebhookEvent)
+class ProcessedWebhookEventAdmin(admin.ModelAdmin):
+    list_display = ("event_id", "event_type", "processed_at")
+    search_fields = ("event_id", "event_type")

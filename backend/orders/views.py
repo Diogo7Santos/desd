@@ -11,6 +11,7 @@ import uuid
 from .models import Order, OrderItem, OrderStatusHistory
 from cart.models import Cart
 from payments.models import PaymentRecord
+from payments.services import create_checkout_session_for_order
 
 
 @login_required
@@ -72,7 +73,7 @@ def place_order(request):
     """
     TC-007: Single-vendor order
     TC-008: Multi-vendor order
-    Creates Order, OrderItems, and PaymentRecords.
+    Creates Order, OrderItems, and PaymentRecords, then redirects to Stripe checkout.
     Only customers can place orders.
     """
     # Only customers can place orders
@@ -124,7 +125,7 @@ def place_order(request):
         delivery_date=delivery_date,
         delivery_instructions=delivery_instructions,
         total_amount=cart.total_price,
-        status=Order.Status.PENDING,
+        status=Order.Status.PENDING_PAYMENT,
     )
     
     # Create order items from cart
@@ -169,16 +170,27 @@ def place_order(request):
     # Create initial status history
     OrderStatusHistory.objects.create(
         order=order,
-        status=Order.Status.PENDING,
+        status=Order.Status.PENDING_PAYMENT,
         changed_by=request.user,
-        notes="Order placed by customer",
+        notes="Order placed by customer; awaiting payment",
     )
     
     # Clear the cart
     cart.items.all().delete()
     
-    messages.success(request, f"Order {order.order_number} placed successfully!")
-    return redirect('orders:order_confirmation', order_id=order.id)
+    success_url = request.build_absolute_uri(f"/orders/confirmation/{order.id}/")
+    cancel_url = request.build_absolute_uri("/orders/checkout/")
+    try:
+        checkout = create_checkout_session_for_order(
+            order_reference=order.order_number,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+    except Exception:
+        messages.error(request, "Unable to start payment session. Please try checkout again.")
+        return redirect("orders:checkout")
+
+    return redirect(checkout["checkout_url"])
 
 
 @login_required

@@ -41,15 +41,8 @@ class PaymentRecordSerializer(serializers.ModelSerializer):
 
 class StripeCheckoutSessionCreateSerializer(serializers.Serializer):
     order_reference = serializers.CharField(max_length=100)
-    producer_reference = serializers.CharField(max_length=100)
-    customer_reference = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    gross_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0.01)
-    currency = serializers.CharField(max_length=3, default="GBP")
     success_url = serializers.URLField()
     cancel_url = serializers.URLField()
-
-    def validate_currency(self, value: str) -> str:
-        return value.upper()
 
 
 class SettlementItemSerializer(serializers.ModelSerializer):
