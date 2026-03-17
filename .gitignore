@@ -13,7 +13,6 @@ staticfiles/
 # Env
 .env
 
-
 # OS/IDE
 .DS_Store
 .vscode/
