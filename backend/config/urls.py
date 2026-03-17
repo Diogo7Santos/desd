@@ -10,6 +10,8 @@ urlpatterns = [
     path("catalog/", include("catalog.urls")),
     path("p/", include("payments.urls")),
     path("", include("accounts.urls")), # Web views for accounts (login, register, dashboards)
+    path('cart/', include('cart.urls')), 
+    path('orders/', include('orders.urls')),
 ]
 
 if settings.DEBUG:

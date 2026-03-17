@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Producer Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/producer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="dashboard-header">
+        <h1 class="mb-0"><i class="bi bi-inbox"></i> Incoming Orders</h1>
+        <p class="mb-0 mt-2 opacity-75">Manage and update orders containing your products</p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if orders_data %}
+    {% for order_data in orders_data %}
+    <div class="incoming-order-card">
+        <div class="order-header">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="order-title">Order {{ order_data.order.order_number }}</div>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> Placed on {{ order_data.order.created_at|date:"F d, Y" }} at {{ order_data.order.created_at|date:"H:i" }}
+                    </small>
+                </div>
+                <span class="status-badge-large status-{{ order_data.order.status|lower }}">
+                    {{ order_data.order.get_status_display }}
+                </span>
+            </div>
+        </div>
+        <div class="order-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="customer-info">
+                        <h6 class="mb-3"><i class="bi bi-person-circle"></i> Customer Information</h6>
+                        <div class="info-row">
+                            <i class="bi bi-person info-icon"></i>
+                            <strong>{{ order_data.order.customer.username }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <i class="bi bi-calendar-check info-icon"></i>
+                            <span>Delivery: {{ order_data.order.delivery_date|date:"F d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="delivery-info">
+                        <h6 class="mb-3"><i class="bi bi-geo-alt"></i> Delivery Address</h6>
+                        <div class="info-row">
+                            <i class="bi bi-house info-icon"></i>
+                            <span>{{ order_data.order.delivery_address }}</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="bi bi-mailbox info-icon"></i>
+                            <span>{{ order_data.order.delivery_postcode }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if order_data.order.delivery_instructions %}
+            <div class="alert alert-warning mb-3">
+                <strong><i class="bi bi-info-circle"></i> Delivery Instructions:</strong> {{ order_data.order.delivery_instructions }}
+            </div>
+            {% endif %}
+
+            <h6 class="mb-3"><i class="bi bi-box-seam"></i> Your Items in This Order</h6>
+            <table class="table items-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th class="text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_data.items %}
+                    <tr>
+                        <td><strong>{{ item.product_name }}</strong></td>
+                        <td>{{ item.quantity }}</td>
+                        <td>£{{ item.unit_price }}</td>
+                        <td class="text-end"><strong>£{{ item.subtotal }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Your Total Earnings:</strong></td>
+                        <td class="text-end"><strong class="text-success">£{{ order_data.subtotal }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="status-update-form">
+                <div class="form-section-title">
+                    <i class="bi bi-pencil-square"></i> Update Order Status
+                </div>
+                <form method="post" action="{% url 'orders:update_status' order_data.order.id %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">New Status:</label>
+                            <select name="status" class="form-select form-select-lg">
+                                <option value="PENDING" {% if order_data.order.status == 'PENDING' %}selected{% endif %}>⏳ Pending</option>
+                                <option value="CONFIRMED" {% if order_data.order.status == 'CONFIRMED' %}selected{% endif %}>✅ Confirmed</option>
+                                <option value="READY" {% if order_data.order.status == 'READY' %}selected{% endif %}>📦 Ready for Delivery</option>
+                                <option value="DELIVERED" {% if order_data.order.status == 'DELIVERED' %}selected{% endif %}>🚚 Delivered</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Notes (Optional):</label>
+                            <input type="text" name="notes" class="form-control form-control-lg"
+                                placeholder="Add any notes about this status update...">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-update-status">
+                                <i class="bi bi-check-circle"></i> Update Order Status
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-dashboard">
+        <i class="bi bi-inbox" style="font-size: 5rem; color: #6c757d;"></i>
+        <h3 class="mt-4">No Incoming Orders</h3>
+        <p class="text-muted mb-4">Orders containing your products will appear here.</p>
+        <p class="text-muted">Make sure your products are listed and available in the marketplace!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
