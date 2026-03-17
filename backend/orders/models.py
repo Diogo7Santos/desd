@@ -114,6 +114,7 @@ class OrderItem(models.Model):
     """
     Individual product within an order.
     TC-007/TC-008: Stores snapshot of product details at order time.
+    Each item has its own status for multi-vendor order management.
     """
     order = models.ForeignKey(
         Order,
@@ -144,6 +145,14 @@ class OrderItem(models.Model):
         max_digits=10,
         decimal_places=2,
         help_text="quantity × unit_price"
+    )
+    
+    # Item-level status for multi-vendor orders
+    status = models.CharField(
+        max_length=20,
+        choices=Order.Status.choices,
+        default=Order.Status.PENDING,
+        help_text="Status of this item (managed by producer)"
     )
 
     class Meta:

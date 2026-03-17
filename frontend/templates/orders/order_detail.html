@@ -75,9 +75,22 @@
                         </div>
                     {% endif %}
                 </div>
+
+                <div class="info-row">
+                    <strong>Delivery Address:</strong>
+                    <span class="value">{{ order.delivery_address }}<br>{{ order.delivery_postcode }}</span>
+                </div>
+
+                {% if order.delivery_instructions %}
+                <div class="info-row">
+                    <strong>Delivery Instructions:</strong>
+                    <span class="value">{{ order.delivery_instructions }}</span>
+                </div>
+                {% endif %}
             </div>
 
             {% for producer, data in items_by_producer.items %}
+<<<<<<< HEAD
                 <div class="detail-card producer-card">
                     <div class="detail-card-header">
                         <h3><i class="bi bi-shop"></i> {{ producer.username }}</h3>
@@ -137,6 +150,56 @@
                         </a>
                     </div>
                 </div>
+=======
+            <div class="producer-items-card">
+                <div class="producer-header">
+                    <h6><i class="bi bi-shop"></i> {{ producer.username}}</h6>
+                </div>
+                <div class="card-body">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data.items %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>£{{ item.unit_price }}</td>
+                                <td class="text-end">£{{ item.subtotal }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end">Subtotal:</td>
+                                <td class="text-end">£{{ data.subtotal }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="actions-card">
+                <h5><i class="bi bi-lightning"></i> Actions</h5>
+                <form method="post" action="{% url 'orders:reorder' order.id %}" class="d-grid">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-reorder">
+                        <i class="bi bi-arrow-repeat"></i> Reorder These Items
+                    </button>
+                </form>
+                <a href="{% url 'catalog:product_list' %}" class="btn-browse">
+                    <i class="bi bi-shop"></i> Browse Products
+                </a>
+>>>>>>> ed0d88f (order status bug fixed and update ui version)
             </div>
         </div>
     </div>

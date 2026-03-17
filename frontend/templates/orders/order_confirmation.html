@@ -3,11 +3,15 @@
 
 {% block title %}Order Confirmation{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/order_confirmation.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="text-center mb-4">
-        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
-        <h1 class="mt-3">Order Confirmed!</h1>
+<div class="confirmation-container">
+    <div class="confirmation-success">
+        <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <h1>Order Confirmed!</h1>
         <p class="lead">Thank you for your order</p>
     </div>
 
@@ -22,21 +26,18 @@
 
     <div class="row">
         <div class="col-lg-8 mx-auto">
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Order Details</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Order Number:</strong><br>
-                            <span class="h5">{{ order.order_number }}</span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Order Date:</strong><br>
-                            {{ order.created_at|date:"F d, Y H:i" }}
-                        </div>
+            <div class="order-details-card">
+                <h5><i class="bi bi-receipt"></i> Order Details</h5>
+                <div class="row">
+                    <div class="col-md-6 detail-row">
+                        <strong>Order Number:</strong>
+                        <span class="order-number">{{ order.order_number }}</span>
                     </div>
+                    <div class="col-md-6 detail-row">
+                        <strong>Order Date:</strong>
+                        <span class="value">{{ order.created_at|date:"F d, Y H:i" }}</span>
+                    </div>
+                </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -60,25 +61,28 @@
                         {{ order.delivery_address }}<br>
                         {{ order.delivery_postcode }}
                     </div>
-
-                    {% if order.delivery_instructions %}
-                    <div class="mb-3">
-                        <strong>Delivery Instructions:</strong><br>
-                        {{ order.delivery_instructions }}
-                    </div>
-                    {% endif %}
                 </div>
+
+                <div class="detail-row">
+                    <strong>Delivery Address:</strong>
+                    <span class="value">{{ order.delivery_address }}<br>{{ order.delivery_postcode }}</span>
+                </div>
+
+                {% if order.delivery_instructions %}
+                <div class="detail-row">
+                    <strong>Delivery Instructions:</strong>
+                    <span class="value">{{ order.delivery_instructions }}</span>
+                </div>
+                {% endif %}
             </div>
 
             {% for producer, data in items_by_producer.items %}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-shop"></i> {{ producer.username }}
-                    </h6>
+            <div class="producer-items-card">
+                <div class="producer-header">
+                    <h6><i class="bi bi-shop"></i> {{ producer.username }}</h6>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm">
+                    <table class="items-table">
                         <thead>
                             <tr>
                                 <th>Product</th>
@@ -99,8 +103,8 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3" class="text-end"><strong>Producer Subtotal:</strong></td>
-                                <td class="text-end"><strong>£{{ data.subtotal }}</strong></td>
+                                <td colspan="3" class="text-end">Producer Subtotal:</td>
+                                <td class="text-end">£{{ data.subtotal }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -108,20 +112,18 @@
             </div>
             {% endfor %}
 
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <h4>Order Total:</h4>
-                        <h4 class="text-success">£{{ order.total_amount }}</h4>
-                    </div>
+            <div class="order-total-card">
+                <div class="total-display">
+                    <h4>Order Total:</h4>
+                    <h4>£{{ order.total_amount }}</h4>
                 </div>
             </div>
 
             <div class="d-grid gap-2">
-                <a href="{% url 'orders:order_history' %}" class="btn btn-primary">
+                <a href="{% url 'orders:order_history' %}" class="btn-view-history">
                     <i class="bi bi-list"></i> View Order History
                 </a>
-                <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'catalog:product_list' %}" class="btn-continue-shopping">
                     <i class="bi bi-shop"></i> Continue Shopping
                 </a>
             </div>

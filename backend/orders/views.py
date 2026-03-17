@@ -255,7 +255,8 @@ def producer_dashboard(request):
 @login_required
 def update_order_status(request, order_id):
     """
-    TC-010: Producer updates order status.
+    TC-010: Producer updates order status for their items only.
+    In multi-vendor orders, each producer manages their own items independently.
     """
     if request.user.role != 'PRODUCER':
         messages.error(request, "Access denied. Producers only.")
@@ -263,8 +264,10 @@ def update_order_status(request, order_id):
     
     order = get_object_or_404(Order, id=order_id)
     
-    # Verify producer has items in this order
-    if not order.items.filter(producer=request.user).exists():
+    # Get only this producer's items in the order
+    producer_items = order.items.filter(producer=request.user)
+    
+    if not producer_items.exists():
         messages.error(request, "You don't have items in this order.")
         return redirect('orders:producer_dashboard')
     
@@ -273,22 +276,62 @@ def update_order_status(request, order_id):
         notes = request.POST.get('notes', '')
         
         if new_status in dict(Order.Status.choices):
-            order.status = new_status
-            order.save()
+            # Update status for this producer's items only
+            producer_items.update(status=new_status)
             
             # Record status change
             OrderStatusHistory.objects.create(
                 order=order,
                 status=new_status,
                 changed_by=request.user,
-                notes=notes,
+                notes=f"Producer {request.user.username}: {notes}" if notes else f"Producer {request.user.username} updated their items to {new_status}",
             )
             
-            messages.success(request, f"Order {order.order_number} status updated to {order.get_status_display()}.")
+            # Update overall order status based on all items
+            _update_overall_order_status(order)
+            
+            messages.success(request, f"Your items in order {order.order_number} updated to {Order.Status(new_status).label}.")
         else:
             messages.error(request, "Invalid status.")
     
     return redirect('orders:producer_dashboard')
+
+
+def _update_overall_order_status(order):
+    """
+    Update the overall order status based on all item statuses.
+    Logic: Order status reflects the least progressed item.
+    """
+    item_statuses = order.items.values_list('status', flat=True)
+    
+    if not item_statuses:
+        return
+    
+    # Priority order (least to most progressed)
+    status_priority = {
+        Order.Status.PENDING: 1,
+        Order.Status.CONFIRMED: 2,
+        Order.Status.READY: 3,
+        Order.Status.DELIVERED: 4,
+        Order.Status.CANCELLED: 5,
+    }
+    
+    # Find the least progressed status
+    min_status = min(item_statuses, key=lambda s: status_priority.get(s, 0))
+    
+    # If all items are delivered, mark order as delivered
+    if all(status == Order.Status.DELIVERED for status in item_statuses):
+        order.status = Order.Status.DELIVERED
+    # If any item is cancelled, check if all are cancelled
+    elif Order.Status.CANCELLED in item_statuses:
+        if all(status == Order.Status.CANCELLED for status in item_statuses):
+            order.status = Order.Status.CANCELLED
+        else:
+            order.status = min_status
+    else:
+        order.status = min_status
+    
+    order.save()
 
 
 @login_required
