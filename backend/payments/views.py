@@ -1,6 +1,3 @@
-from decimal import Decimal
-from uuid import uuid4
-
 from django.db import transaction
 from django.db.models import Sum
 from django.shortcuts import render
@@ -10,7 +7,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import PaymentRecord, SettlementBatch, SettlementItem
+from .models import PaymentRecord, ProcessedWebhookEvent, SettlementBatch, SettlementItem
+from .services import create_checkout_session_for_order
 from .serializers import (
     CommissionReportQuerySerializer,
     PaymentRecordSerializer,
@@ -22,16 +20,20 @@ from .serializers import (
 from .stripe_gateway import StripeGateway
 
 
-def _to_minor_units(amount_major: Decimal) -> int:
-    return int((amount_major * 100).to_integral_value())
-
-
 class PaymentRecordListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentRecordSerializer
 
     def get_queryset(self):
         queryset = PaymentRecord.objects.all()
+        user = self.request.user
+
+        role = getattr(user, "role", "")
+        if role == "CUSTOMER":
+            queryset = queryset.filter(customer_reference=str(user.id))
+        elif role == "PRODUCER":
+            queryset = queryset.filter(producer_reference=str(user.id))
+
         producer_reference = self.request.query_params.get("producer_reference")
         status_filter = self.request.query_params.get("status")
         order_reference = self.request.query_params.get("order_reference")
@@ -51,6 +53,8 @@ class SettlementListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = SettlementBatch.objects.prefetch_related("items__payment_record")
+        if getattr(self.request.user, "role", "") == "PRODUCER":
+            queryset = queryset.filter(producer_reference=str(self.request.user.id))
         producer_reference = self.request.query_params.get("producer_reference")
         if producer_reference:
             queryset = queryset.filter(producer_reference=producer_reference)
@@ -117,6 +121,10 @@ class CommissionReportAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        role = getattr(request.user, "role", "")
+        if role == "CUSTOMER":
+            return Response({"detail": "Customers cannot access commission reports."}, status=status.HTTP_403_FORBIDDEN)
+
         query_serializer = CommissionReportQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
@@ -135,49 +143,28 @@ class StripeCheckoutSessionCreateAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
 
-        record = PaymentRecord.objects.create(
-            order_reference=payload["order_reference"],
-            transaction_reference=f"TXN-{uuid4().hex[:16].upper()}",
-            producer_reference=payload["producer_reference"],
-            customer_reference=payload.get("customer_reference", ""),
-            currency=payload["currency"],
-            gross_amount=payload["gross_amount"],
-            status=PaymentRecord.Status.PENDING,
-            payment_provider="STRIPE_TEST",
-        )
-
         try:
-            gateway = StripeGateway()
-            session = gateway.create_checkout_session(
-                amount_minor_units=_to_minor_units(payload["gross_amount"]),
-                currency=payload["currency"],
+            checkout = create_checkout_session_for_order(
+                order_reference=payload["order_reference"],
                 success_url=payload["success_url"],
                 cancel_url=payload["cancel_url"],
-                transaction_reference=record.transaction_reference,
-                payment_record_id=record.id,
-                description=f"Order {record.order_reference}",
             )
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         except RuntimeError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception:
-            record.status = PaymentRecord.Status.FAILED
-            record.save(update_fields=["status", "updated_at"])
             return Response(
                 {"detail": "Unable to create Stripe checkout session."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        record.checkout_session_id = session.session_id
-        record.checkout_session_url = session.checkout_url
-        record.provider_payment_id = session.payment_intent_id or ""
-        record.save(update_fields=["checkout_session_id", "checkout_session_url", "provider_payment_id"])
-
         return Response(
             {
-                "payment_record_id": record.id,
-                "transaction_reference": record.transaction_reference,
-                "checkout_session_id": session.session_id,
-                "checkout_url": session.checkout_url,
+                "order_reference": payload["order_reference"],
+                "checkout_session_id": checkout["checkout_session_id"],
+                "checkout_url": checkout["checkout_url"],
+                "payment_record_ids": checkout["payment_record_ids"],
             },
             status=status.HTTP_201_CREATED,
         )
@@ -201,34 +188,64 @@ class StripeWebhookAPIView(APIView):
             return Response({"detail": "Invalid Stripe webhook payload or signature."}, status=status.HTTP_400_BAD_REQUEST)
 
         event_type = event.get("type", "")
+        event_id = event.get("id", "")
         obj = event.get("data", {}).get("object", {})
+        if not event_id:
+            return Response({"detail": "Missing webhook event id."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
-            record = self._find_record(obj)
-            if record:
-                record.status = PaymentRecord.Status.PAID
-                record.paid_at = timezone.now()
-                record.provider_payment_id = obj.get("payment_intent", "") or record.provider_payment_id
-                record.save(update_fields=["status", "paid_at", "provider_payment_id", "updated_at"])
-        elif event_type in ("checkout.session.expired", "checkout.session.async_payment_failed"):
-            record = self._find_record(obj)
-            if record:
-                record.status = PaymentRecord.Status.FAILED
-                record.save(update_fields=["status", "updated_at"])
+        with transaction.atomic():
+            processed, created = ProcessedWebhookEvent.objects.get_or_create(
+                event_id=event_id,
+                defaults={"event_type": event_type},
+            )
+            if not created:
+                return Response({"received": True, "duplicate": True}, status=status.HTTP_200_OK)
+
+            if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+                self._apply_status_for_checkout_session(
+                    checkout_session_id=obj.get("id", ""),
+                    new_status=PaymentRecord.Status.PAID,
+                    provider_payment_id=obj.get("payment_intent", ""),
+                )
+            elif event_type in ("checkout.session.expired", "checkout.session.async_payment_failed"):
+                self._apply_status_for_checkout_session(
+                    checkout_session_id=obj.get("id", ""),
+                    new_status=PaymentRecord.Status.FAILED,
+                    provider_payment_id=obj.get("payment_intent", ""),
+                )
 
         return Response({"received": True}, status=status.HTTP_200_OK)
 
-    def _find_record(self, stripe_object):
-        session_id = stripe_object.get("id", "")
-        metadata = stripe_object.get("metadata", {}) or {}
-        txn_reference = metadata.get("transaction_reference")
-        if session_id:
-            record = PaymentRecord.objects.filter(checkout_session_id=session_id).first()
-            if record:
-                return record
-        if txn_reference:
-            return PaymentRecord.objects.filter(transaction_reference=txn_reference).first()
-        return None
+    def _apply_status_for_checkout_session(self, *, checkout_session_id: str, new_status: str, provider_payment_id: str):
+        if not checkout_session_id:
+            return
+
+        with transaction.atomic():
+            records = list(
+                PaymentRecord.objects.select_for_update().filter(checkout_session_id=checkout_session_id)
+            )
+            if not records:
+                return
+
+            paid_at_value = timezone.now() if new_status == PaymentRecord.Status.PAID else None
+            for record in records:
+                record.status = new_status
+                if paid_at_value:
+                    record.paid_at = paid_at_value
+                if provider_payment_id:
+                    record.provider_payment_id = provider_payment_id
+                fields = ["status", "updated_at"]
+                if paid_at_value:
+                    fields.append("paid_at")
+                if provider_payment_id:
+                    fields.append("provider_payment_id")
+                record.save(update_fields=fields)
+
+            if new_status == PaymentRecord.Status.PAID:
+                from orders.models import Order
+
+                order_refs = {r.order_reference for r in records}
+                Order.objects.filter(order_number__in=order_refs).update(status=Order.Status.PENDING)
 
 
 def payments_dashboard(request):
