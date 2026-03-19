@@ -28,7 +28,6 @@
             {% if user.is_authenticated %}
                 {% if user.role == "PRODUCER" %}
                     <a href="{% url 'orders:producer_dashboard' %}">Incoming Orders</a>
-                    
                 {% else %}
                     <a href="{% url 'cart:view_cart' %}">Cart</a>
                     <a href="{% url 'orders:order_history' %}">Orders</a>
@@ -39,6 +38,7 @@
         <!-- Auth Section -->
         <div class="auth-section">
             {% if user.is_authenticated %}
+                <a href="{% url 'account' %}" class="btn-outline">My Account</a>
                 <span class="user-label">
                     {{ user.username }}
                 </span>
