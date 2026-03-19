@@ -79,11 +79,10 @@ def login_page(request):
             messages.error(request, "Too many failed login attempts. Please try again later.")
             return render(request, "accounts/login.html", {"form": form})
 
-        user = None
-
+        # Look up user by email to get username for authentication
         try:
-            matched_user = User.objects.get(email__iexact=email)
-            user = authenticate(request, username=matched_user.username, password=password)
+            user_obj = User.objects.get(email=email)
+            user = authenticate(request, username=user_obj.username, password=password)
         except User.DoesNotExist:
             user = None
 
