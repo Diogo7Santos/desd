@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Order Confirmation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+        <h1 class="mt-3">Order Confirmed!</h1>
+        <p class="lead">Thank you for your order</p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Order Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Order Number:</strong><br>
+                            <span class="h5">{{ order.order_number }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Order Date:</strong><br>
+                            {{ order.created_at|date:"F d, Y H:i" }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Delivery Date:</strong><br>
+                            {{ order.delivery_date|date:"F d, Y" }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong><br>
+                            <span class="badge bg-warning">{{ order.get_status_display }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Delivery Address:</strong><br>
+                        {{ order.delivery_address }}<br>
+                        {{ order.delivery_postcode }}
+                    </div>
+
+                    {% if order.delivery_instructions %}
+                    <div class="mb-3">
+                        <strong>Delivery Instructions:</strong><br>
+                        {{ order.delivery_instructions }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% for producer, data in items_by_producer.items %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-shop"></i> {{ producer.username }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data.items %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>£{{ item.unit_price }}</td>
+                                <td class="text-end">£{{ item.subtotal }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Producer Subtotal:</strong></td>
+                                <td class="text-end"><strong>£{{ data.subtotal }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h4>Order Total:</h4>
+                        <h4 class="text-success">£{{ order.total_amount }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'orders:order_history' %}" class="btn btn-primary">
+                    <i class="bi bi-list"></i> View Order History
+                </a>
+                <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-shop"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

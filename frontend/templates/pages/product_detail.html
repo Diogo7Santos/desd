@@ -64,7 +64,35 @@
       </div>
 
       <div class="detail-actions">
-        <a href="{% url 'catalog:product_list' %}" class="btn">
+        {% if user.is_authenticated and user.role == 'CUSTOMER' %}
+          {% if product.is_available and product.stock_quantity > 0 %}
+            <form method="post" action="{% url 'cart:add_to_cart' product.id %}" class="mb-3">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="quantity" class="form-label">Quantity:</label>
+                <input type="number" name="quantity" id="quantity" value="1" min="1" max="{{ product.stock_quantity }}" class="form-control" style="width: 120px; display: inline-block;">
+                <span class="text-muted ms-2">{{ product.unit }}</span>
+              </div>
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-cart-plus"></i> Add to Cart
+              </button>
+            </form>
+          {% else %}
+            <div class="alert alert-warning">
+              <strong>Out of Stock</strong> - This product is currently unavailable.
+            </div>
+          {% endif %}
+        {% elif user.is_authenticated %}
+          <div class="alert alert-info mb-3">
+            <strong>Note:</strong> Only customers can purchase products.
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-3">
+            <strong>Please <a href="{% url 'login' %}">login</a> as a customer to purchase this product.</strong>
+          </div>
+        {% endif %}
+        
+        <a href="{% url 'catalog:product_list' %}" class="btn mt-2">
           Back to Marketplace
         </a>
       </div>

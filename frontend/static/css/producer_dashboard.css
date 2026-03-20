@@ -1,0 +1,206 @@
+/* Dashboard Header */
+.dashboard-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid black;
+}
+
+.dashboard-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+}
+
+.dashboard-header p {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+/* Incoming Order Card */
+.incoming-order-card {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.order-header {
+    background: #fafafa;
+    padding: 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.order-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Status Badge Large */
+.status-badge-large {
+    padding: 0.4rem 0.875rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+}
+
+.status-pending {
+    background: #fff9e6;
+    color: #b8860b;
+    border-color: #ffd700;
+}
+
+.status-confirmed {
+    background: #e6f7ff;
+    color: #0066cc;
+    border-color: #4da6ff;
+}
+
+.status-ready {
+    background: #fff4e6;
+    color: #d97706;
+    border-color: #fb923c;
+}
+
+.status-delivered {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #4ade80;
+}
+
+/* Order Body */
+.order-body {
+    padding: 1.25rem;
+}
+
+/* Info Boxes */
+.customer-info,
+.delivery-info {
+    background: #fafafa;
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.25rem;
+}
+
+.customer-info h6,
+.delivery-info h6 {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-icon {
+    width: 20px;
+    margin-right: 0.625rem;
+    color: #666;
+}
+
+/* Items Table */
+.items-table {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+}
+
+.items-table thead {
+    background: black;
+    color: white;
+}
+
+.items-table th {
+    padding: 0.875rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+}
+
+.items-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 0.9rem;
+}
+
+.items-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.items-table tfoot {
+    background: #fafafa;
+    font-weight: 700;
+}
+
+.items-table tfoot td {
+    padding: 0.875rem 1rem;
+    border-bottom: none;
+}
+
+/* Status Update Form */
+.status-update-form {
+    background: #fafafa;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 1.25rem;
+    border-radius: 6px;
+}
+
+.form-section-title {
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.btn-update-status {
+    background: black;
+    border: 1px solid black;
+    color: white;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.btn-update-status:hover {
+    background: #333;
+    color: white;
+}
+
+/* Empty Dashboard */
+.empty-dashboard {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.empty-dashboard i {
+    font-size: 3.5rem;
+    color: #ccc;
+}
+
+.empty-dashboard h3 {
+    margin-top: 1.5rem;
+    font-weight: 700;
+}
+
+.empty-dashboard p {
+    color: #666;
+    margin-bottom: 0.5rem;
+}
