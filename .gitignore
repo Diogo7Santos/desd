@@ -11,7 +11,7 @@ db.sqlite3
 staticfiles/
 
 # Env
-.env
+#.env
 
 
 # OS/IDE
