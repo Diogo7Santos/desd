@@ -21,7 +21,7 @@ class PaymentRecord(models.Model):
     payment_provider = models.CharField(max_length=30, default="STRIPE_TEST")
     provider_payment_id = models.CharField(max_length=120, blank=True)
     checkout_session_id = models.CharField(max_length=120, blank=True)
-    checkout_session_url = models.URLField(blank=True)
+    checkout_session_url = models.URLField(blank=True, max_length=500)
     currency = models.CharField(max_length=3, default="GBP")
     gross_amount = models.DecimalField(max_digits=12, decimal_places=2)
     commission_rate = models.DecimalField(max_digits=5, decimal_places=4, default=Decimal("0.0500"))
@@ -105,3 +105,15 @@ class SettlementItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.settlement_id}:{self.payment_record_id}"
+
+
+class ProcessedWebhookEvent(models.Model):
+    event_id = models.CharField(max_length=120, unique=True)
+    event_type = models.CharField(max_length=80)
+    processed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-processed_at"]
+
+    def __str__(self) -> str:
+        return self.event_id

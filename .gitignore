@@ -11,9 +11,12 @@ db.sqlite3
 staticfiles/
 
 # Env
-#.env
+.env
+
 
 # OS/IDE
 .DS_Store
 .vscode/
 .idea/
+postman
+.postman

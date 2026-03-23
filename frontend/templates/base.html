@@ -24,15 +24,21 @@
         <!-- Navigation Links -->
         <nav class="nav-links">
             <a href="{% url 'catalog:product_list' %}">Marketplace</a>
-
+        
             {% if user.is_authenticated %}
-                 {% if user.role == "PRODUCER" %}
+
+                {% if user.role == "PRODUCER" %}
+                    <a href="{% url 'orders:producer_dashboard' %}">Incoming Orders</a>
                     <a href="{% url 'catalog:product_create' %}">Add Product</a>
+                {% else %}
+                    <a href="{% url 'cart:view_cart' %}">Cart</a>
+                    <a href="{% url 'orders:order_history' %}">Orders</a>
+
                 {% endif %}
             {% endif %}
         </nav>
 
-        <!-- Auth Section -->
+        <!-- Auth Section  (check if _nav is used)-->
         <div class="auth-section">
             {% if request.user.is_authenticated %}
                 <span class="user-label">

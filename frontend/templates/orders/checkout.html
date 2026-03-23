@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Checkout</h1>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            {% if producer_count > 1 %}
+            <div class="alert alert-info">
+                <strong>Multi-Vendor Order:</strong> Your order contains items from {{ producer_count }} producers. Each
+                will deliver separately according to their schedule.
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Delivery Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'orders:place_order' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="delivery_address" class="form-label">Delivery Address *</label>
+                            <textarea name="delivery_address" id="delivery_address" class="form-control" rows="3"
+                                required>{{ customer_address }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="delivery_postcode" class="form-label">Postcode *</label>
+                            <input type="text" name="delivery_postcode" id="delivery_postcode" class="form-control"
+                                value="{{ customer_postcode }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="delivery_date" class="form-label">Delivery Date *</label>
+                            <input type="date" name="delivery_date" id="delivery_date" class="form-control"
+                                min="{{ min_delivery_date|date:'Y-m-d' }}" required>
+                            <small class="text-muted">Minimum 48 hours notice required. Earliest delivery: {{
+                                min_delivery_date }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="delivery_instructions" class="form-label">Delivery Instructions
+                                (Optional)</label>
+                            <textarea name="delivery_instructions" id="delivery_instructions" class="form-control"
+                                rows="2" placeholder="e.g., Leave at side door, call on arrival"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Place Order (£{{ total_price }})
+                            </button>
+                            <a href="{% url 'cart:view_cart' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Cart
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% for producer, items in items_by_producer.items %}
+                    <div class="mb-3 pb-3 border-bottom">
+                        <h6 class="text-success">{{ producer.username }}</h6>
+                        {% for item in items %}
+                        <div class="d-flex justify-content-between small">
+                            <span>{{ item.quantity }}x {{ item.product.name }}</span>
+                            <span>£{{ item.subtotal }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between">
+                        <h5>Total:</h5>
+                        <h5 class="text-success">£{{ total_price }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
