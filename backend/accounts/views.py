@@ -201,7 +201,7 @@ def customer_home(request):
         return HttpResponseForbidden("Forbidden: customer only.")
     return render(
         request,
-        "accounts/customer_home.html",
+        "pages/product_list.html",
         {"customer_profile": getattr(request.user, "customer_profile", None)},
     )
 
@@ -212,7 +212,7 @@ def producer_home(request):
         return HttpResponseForbidden("Forbidden: producer only.")
     return render(
         request,
-        "accounts/producer_home.html",
+        "pages/producer_products.html",
         {"producer_profile": getattr(request.user, "producer_profile", None)},
     )
 
@@ -221,7 +221,7 @@ def producer_home(request):
 def admin_home(request):
     if not _has_role(request.user, User.Role.ADMIN):
         return HttpResponseForbidden("Forbidden: admin only.")
-    return render(request, "accounts/admin_home.html")
+    return render(request, "admin/")
 
 @login_required
 def account_page(request):
