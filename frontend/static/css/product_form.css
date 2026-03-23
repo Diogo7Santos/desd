@@ -71,7 +71,9 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
-  }
+    text-decoration: none;
+    color: inherit;          
+}
   
   .btn:hover {
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);

@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib import admin
 from .views import (
     login_page, register_page, logout_page,
     customer_home, producer_home, admin_home,
@@ -13,5 +14,5 @@ urlpatterns = [
 
     path("customer/", customer_home, name="customer_home"),
     path("producer/", producer_home, name="producer_home"),
-    path("admin-home/", admin_home, name="admin_home"),
+    path("admin/", admin.site.urls, name="admin_home"),
 ]
