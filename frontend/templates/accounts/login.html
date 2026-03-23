@@ -1,0 +1,51 @@
+{% extends "accounts/base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 520px;">
+  <div class="page-header">
+    <h1 class="page-title">Login</h1>
+    <p class="page-desc">Sign in using your email, password, and role.</p>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      {{ form.non_field_errors }}
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        {{ form.email }}
+        {{ form.email.errors }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <div class="row">
+          {{ form.role }}
+        </div>
+        {{ form.role.errors }}
+      </div>
+
+      <div class="form-group">
+        <label>
+          {{ form.remember_me }} Remember me
+        </label>
+        {{ form.remember_me.errors }}
+      </div>
+
+      <div class="row-between mt-16">
+        <button class="btn btn-primary" type="submit">Login</button>
+        <a class="btn btn-outline" href="{% url 'register' %}">Register</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
