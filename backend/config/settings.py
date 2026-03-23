@@ -3,20 +3,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-REPO_DIR = BASE_DIR.parent # Assuming the structure is repo/backend/config/settings.py
+REPO_DIR = BASE_DIR.parent
 
-# Load .env from the repo root (desd/.env)
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(REPO_DIR / ".env")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-me")
 
-# More forgiving boolean parsing for DEBUG
 DEBUG = os.environ.get("DJANGO_DEBUG", "0").strip().lower() in ("1", "true", "yes", "on")
 
-# Split and clean hosts, remove blanks
 ALLOWED_HOSTS = [
-    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if h.strip()
+    host.strip()
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
 ]
 
 INSTALLED_APPS = [
@@ -57,7 +55,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            BASE_DIR.parent / "frontend" / "templates",
+            REPO_DIR / "frontend" / "templates",
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -72,7 +70,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# PostgreSQL (Docker defaults)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -102,25 +99,14 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# Static files
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [
-    BASE_DIR.parent / "frontend" / "static",
+    REPO_DIR / "frontend" / "static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Media (user uploaded files, e.g. product images)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-STATIC_URL = 'static/'
-
-STATICFILES_DIRS = [
-    REPO_DIR / 'frontend' / 'static',
-]
-TEMPLATES[0]["DIRS"] = [
-    REPO_DIR / 'frontend' / 'templates',
-]
 
 # Payments (Stripe Test Mode)
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -128,7 +114,6 @@ STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 LOGIN_URL = "login"
 
-# Cookie settings for security
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -136,4 +121,3 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-
