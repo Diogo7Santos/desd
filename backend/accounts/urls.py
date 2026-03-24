@@ -12,7 +12,7 @@ urlpatterns = [
     path("logout/", logout_page, name="logout"),
     path("account/", account_page, name="account"),
 
-    path("customer/", customer_home, name="customer_home"),
-    path("producer/", producer_home, name="producer_home"),
-    path("admin/", admin.site.urls, name="admin_home"),
+    path("catalog/", customer_home, name="customer_home"),
+    path("producer/products/", producer_home, name="producer_home"),
+    path("admin/", admin_home, name="admin_home"),
 ]
