@@ -10,65 +10,83 @@
 {% block content %}
 <div class="checkout-container">
     <div class="checkout-header">
-        <h1><i class="bi bi-credit-card"></i> Checkout</h1>
+        <h1>Checkout</h1>
+        <p>Confirm your delivery details and review your order before placing it.</p>
     </div>
 
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+    {% if producer_count > 1 %}
+        <div class="checkout-info-banner">
+            <strong>Multi-Vendor Order:</strong>
+            Your order contains items from {{ producer_count }} producers. Each producer will deliver separately according to their schedule.
+        </div>
     {% endif %}
 
-    <div class="row">
-        <div class="col-lg-8">
-            {% if producer_count > 1 %}
-            <div class="multi-vendor-alert">
-                <strong><i class="bi bi-info-circle"></i> Multi-Vendor Order:</strong> Your order contains items from {{ producer_count }} producers. Each
-                will deliver separately according to their schedule.
-            </div>
-            {% endif %}
+    <div class="checkout-layout">
+        <div class="checkout-main">
+            <div class="checkout-card">
+                <div class="checkout-card-header">
+                    <h3>Delivery Information</h3>
+                </div>
 
-            <div class="checkout-form-card">
-                <h5><i class="bi bi-geo-alt"></i> Delivery Information</h5>
-                <div>
-                    <form method="post" action="{% url 'orders:place_order' %}">
+                <div class="checkout-card-body">
+                    <form method="post" action="{% url 'orders:place_order' %}" class="checkout-form">
                         {% csrf_token %}
 
-                        <div class="mb-3">
-                            <label for="delivery_address" class="form-label">Delivery Address *</label>
-                            <textarea name="delivery_address" id="delivery_address" class="form-control" rows="3"
-                                required>{{ customer_address }}</textarea>
+                        <div class="form-group">
+                            <label for="delivery_address">Delivery Address *</label>
+                            <textarea
+                                name="delivery_address"
+                                id="delivery_address"
+                                class="checkout-input checkout-textarea"
+                                rows="3"
+                                required
+                            >{{ customer_address }}</textarea>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="delivery_postcode" class="form-label">Postcode *</label>
-                            <input type="text" name="delivery_postcode" id="delivery_postcode" class="form-control"
-                                value="{{ customer_postcode }}" required>
+                        <div class="form-group">
+                            <label for="delivery_postcode">Postcode *</label>
+                            <input
+                                type="text"
+                                name="delivery_postcode"
+                                id="delivery_postcode"
+                                class="checkout-input"
+                                value="{{ customer_postcode }}"
+                                required
+                            >
                         </div>
 
-                        <div class="mb-3">
-                            <label for="delivery_date" class="form-label">Delivery Date *</label>
-                            <input type="date" name="delivery_date" id="delivery_date" class="form-control"
-                                min="{{ min_delivery_date|date:'Y-m-d' }}" required>
-                            <small class="text-muted">Minimum 48 hours notice required. Earliest delivery: {{
-                                min_delivery_date }}</small>
+                        <div class="form-group">
+                            <label for="delivery_date">Delivery Date *</label>
+                            <input
+                                type="date"
+                                name="delivery_date"
+                                id="delivery_date"
+                                class="checkout-input"
+                                min="{{ min_delivery_date|date:'Y-m-d' }}"
+                                required
+                            >
+                            <small class="form-help">
+                                Minimum 48 hours notice required. Earliest delivery: {{ min_delivery_date }}
+                            </small>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="delivery_instructions" class="form-label">Delivery Instructions
-                                (Optional)</label>
-                            <textarea name="delivery_instructions" id="delivery_instructions" class="form-control"
-                                rows="2" placeholder="e.g., Leave at side door, call on arrival"></textarea>
+                        <div class="form-group">
+                            <label for="delivery_instructions">Delivery Instructions (Optional)</label>
+                            <textarea
+                                name="delivery_instructions"
+                                id="delivery_instructions"
+                                class="checkout-input checkout-textarea"
+                                rows="2"
+                                placeholder="e.g., Leave at side door, call on arrival"
+                            ></textarea>
                         </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn-place-order">
+                        <div class="checkout-actions">
+                            <button type="submit" class="checkout-action-btn">
                                 <i class="bi bi-check-circle"></i> Place Order (£{{ total_price }})
                             </button>
-                            <a href="{% url 'cart:view_cart' %}" class="btn-back-cart">
+
+                            <a href="{% url 'cart:view_cart' %}" class="checkout-action-btn">
                                 <i class="bi bi-arrow-left"></i> Back to Cart
                             </a>
                         </div>
@@ -77,24 +95,32 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="order-summary-card">
-                <h5><i class="bi bi-receipt"></i> Order Summary</h5>
-                {% for producer, items in items_by_producer.items %}
-                <div class="producer-section">
-                    <div class="producer-name"><i class="bi bi-shop"></i> {{ producer.username }}</div>
-                    {% for item in items %}
-                    <div class="summary-item">
-                        <span>{{ item.quantity }}x {{ item.product.name }}</span>
-                        <span>£{{ item.subtotal }}</span>
-                    </div>
+        <div class="checkout-sidebar">
+            <div class="checkout-card">
+                <div class="checkout-card-header">
+                    <h3>Order Summary</h3>
+                </div>
+
+                <div class="checkout-card-body">
+                    {% for producer, items in items_by_producer.items %}
+                        <div class="summary-section">
+                            <h4>{{ producer.username }}</h4>
+
+                            {% for item in items %}
+                                <div class="summary-line">
+                                    <span>{{ item.quantity }}x {{ item.product.name }}</span>
+                                    <span>£{{ item.subtotal }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% endfor %}
                 </div>
                 {% endfor %}
 
-                <div class="summary-total">
-                    <span>Total:</span>
-                    <span class="amount">£{{ total_price }}</span>
+                    <div class="summary-total">
+                        <span>Total</span>
+                        <strong>£{{ total_price }}</strong>
+                    </div>
                 </div>
             </div>
         </div>

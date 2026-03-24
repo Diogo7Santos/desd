@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import admin
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -79,11 +80,13 @@ def login_page(request):
             messages.error(request, "Too many failed login attempts. Please try again later.")
             return render(request, "accounts/login.html", {"form": form})
 
+
         user = None
 
         try:
             matched_user = User.objects.get(email__iexact=email)
             user = authenticate(request, username=matched_user.username, password=password)
+
         except User.DoesNotExist:
             user = None
 
@@ -221,7 +224,7 @@ def producer_home(request):
 def admin_home(request):
     if not _has_role(request.user, User.Role.ADMIN):
         return HttpResponseForbidden("Forbidden: admin only.")
-    return render(request, "admin/")
+    return render(request, admin.site.urls)  # This will render the default Django admin dashboard
 
 @login_required
 def account_page(request):

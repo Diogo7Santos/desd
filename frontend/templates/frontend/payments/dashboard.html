@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{% load static %}
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+{% endblock %}
 
 {% block title %}Payments Dashboard{% endblock %}
 
