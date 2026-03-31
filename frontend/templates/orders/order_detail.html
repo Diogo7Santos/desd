@@ -3,113 +3,135 @@
 
 {% block title %}Order {{ order.order_number }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/order_detail.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Order {{ order.order_number }}</h1>
-        <a href="{% url 'orders:order_history' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to History
-        </a>
+<div class="order-detail-container">
+    <div class="order-detail-header">
+        <div class="order-detail-header-row">
+            <div>
+                <h1>Order {{ order.order_number }}</h1>
+                <p>Review the full details of this order.</p>
+            </div>
+
+            <a href="{% url 'orders:order_history' %}" class="detail-action-btn">
+                <i class="bi bi-arrow-left"></i> Back to History
+            </a>
+        </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Order Information</h5>
+    <div class="order-detail-layout">
+        <div class="order-detail-main">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Order Information</h3>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Order Date:</strong><br>
-                            {{ order.created_at|date:"F d, Y H:i" }}
+
+                <div class="detail-card-body">
+                    <div class="detail-info-grid">
+                        <div class="detail-info-block">
+                            <span class="detail-label">Order Date</span>
+                            <span class="detail-value">{{ order.created_at|date:"F d, Y H:i" }}</span>
                         </div>
-                        <div class="col-md-6">
-                            <strong>Delivery Date:</strong><br>
-                            {{ order.delivery_date|date:"F d, Y" }}
+
+                        <div class="detail-info-block">
+                            <span class="detail-label">Delivery Date</span>
+                            <span class="detail-value">{{ order.delivery_date|date:"F d, Y" }}</span>
+                        </div>
+
+                        <div class="detail-info-block">
+                            <span class="detail-label">Status</span>
+                            <span class="status-badge status-{{ order.status|lower }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+
+                        <div class="detail-info-block">
+                            <span class="detail-label">Total Amount</span>
+                            <span class="detail-value total-value">£{{ order.total_amount }}</span>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Status:</strong><br>
-                            <span class="badge bg-{{ order.status|lower }}">{{ order.get_status_display }}</span>
+                    <div class="detail-section">
+                        <span class="detail-label">Delivery Address</span>
+                        <div class="detail-value-block">
+                            {{ order.delivery_address }}<br>
+                            {{ order.delivery_postcode }}
                         </div>
-                        <div class="col-md-6">
-                            <strong>Total Amount:</strong><br>
-                            <span class="h5 text-success">£{{ order.total_amount }}</span>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <strong>Delivery Address:</strong><br>
-                        {{ order.delivery_address }}<br>
-                        {{ order.delivery_postcode }}
                     </div>
 
                     {% if order.delivery_instructions %}
-                    <div>
-                        <strong>Delivery Instructions:</strong><br>
-                        {{ order.delivery_instructions }}
-                    </div>
+                        <div class="detail-section">
+                            <span class="detail-label">Delivery Instructions</span>
+                            <div class="detail-value-block">
+                                {{ order.delivery_instructions }}
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
             </div>
 
             {% for producer, data in items_by_producer.items %}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-shop"></i> {{ producer.username}}
-                    </h6>
+                <div class="detail-card producer-card">
+                    <div class="detail-card-header">
+                        <h3><i class="bi bi-shop"></i> {{ producer.username }}</h3>
+                    </div>
+
+                    <div class="detail-card-body">
+                        <div class="order-items-table-wrap">
+                            <table class="order-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th class="text-right">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in data.items %}
+                                        <tr>
+                                            <td>{{ item.product_name }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>£{{ item.unit_price }}</td>
+                                            <td class="text-right">£{{ item.subtotal }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-right"><strong>Subtotal</strong></td>
+                                        <td class="text-right"><strong>£{{ data.subtotal }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th class="text-end">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in data.items %}
-                            <tr>
-                                <td>{{ item.product_name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>£{{ item.unit_price }}</td>
-                                <td class="text-end">£{{ item.subtotal }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                                <td class="text-end"><strong>£{{ data.subtotal }}</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
             {% endfor %}
         </div>
 
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Actions</h5>
+        <div class="order-detail-sidebar">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Actions</h3>
                 </div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'orders:reorder' order.id %}" class="d-grid">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success mb-2">
-                            <i class="bi bi-arrow-repeat"></i> Reorder These Items
-                        </button>
-                    </form>
-                    <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-shop"></i> Browse Products
-                    </a>
+
+                <div class="detail-card-body">
+                    <div class="detail-actions">
+                        <form method="post" action="{% url 'orders:reorder' order.id %}" class="detail-action-form">
+                            {% csrf_token %}
+                            <button type="submit" class="detail-action-btn detail-action-danger">
+                                <i class="bi bi-arrow-repeat"></i> Reorder These Items
+                            </button>
+                        </form>
+
+                        <a href="{% url 'catalog:product_list' %}" class="detail-action-btn">
+                            <i class="bi bi-shop"></i> Browse Products
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

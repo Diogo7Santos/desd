@@ -258,21 +258,21 @@ def payments_dashboard(request):
             status=SettlementBatch.Status.PAID
         ).count(),
     }
-    return render(request, "payments/dashboard.html", context)
+    return render(request, "frontend/payments/dashboard.html", context)
 
 
 def payment_records_page(request):
     records = PaymentRecord.objects.all()[:50]
-    return render(request, "payments/payment_records.html", {"records": records})
+    return render(request, "frontend/payments/payment_records.html", {"records": records})
 
 
 def settlements_page(request):
     settlements = SettlementBatch.objects.prefetch_related("items__payment_record").all()[:30]
-    return render(request, "payments/settlements.html", {"settlements": settlements})
+    return render(request, "frontend/payments/settlements.html", {"settlements": settlements})
 
 
 def commission_report_page(request):
     today = timezone.now().date()
     month_start = today.replace(day=1)
     report = commission_report_payload(start_date=month_start, end_date=today)
-    return render(request, "payments/commission_report.html", {"report": report})
+    return render(request, "frontend/payments/commission_report.html", {"report": report})

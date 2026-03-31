@@ -79,10 +79,13 @@ def login_page(request):
             messages.error(request, "Too many failed login attempts. Please try again later.")
             return render(request, "accounts/login.html", {"form": form})
 
-        # Look up user by email to get username for authentication
+
+        user = None
+
         try:
-            user_obj = User.objects.get(email=email)
-            user = authenticate(request, username=user_obj.username, password=password)
+            matched_user = User.objects.get(email__iexact=email)
+            user = authenticate(request, username=matched_user.username, password=password)
+
         except User.DoesNotExist:
             user = None
 
@@ -200,7 +203,7 @@ def customer_home(request):
         return HttpResponseForbidden("Forbidden: customer only.")
     return render(
         request,
-        "accounts/customer_home.html",
+        "pages/product_list.html",
         {"customer_profile": getattr(request.user, "customer_profile", None)},
     )
 
@@ -211,7 +214,7 @@ def producer_home(request):
         return HttpResponseForbidden("Forbidden: producer only.")
     return render(
         request,
-        "accounts/producer_home.html",
+        "pages/producer_products.html",
         {"producer_profile": getattr(request.user, "producer_profile", None)},
     )
 
@@ -220,7 +223,7 @@ def producer_home(request):
 def admin_home(request):
     if not _has_role(request.user, User.Role.ADMIN):
         return HttpResponseForbidden("Forbidden: admin only.")
-    return render(request, "accounts/admin_home.html")
+    return render(request, "admin/")
 
 @login_required
 def account_page(request):
