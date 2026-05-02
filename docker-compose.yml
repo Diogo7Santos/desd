@@ -34,6 +34,7 @@ services:
       DB_NAME: ${DB_NAME}
     depends_on:
       - db
+      - redis
 
   nginx:
     image: nginx:latest
@@ -45,6 +46,12 @@ services:
       - ./backend/media:/media
     depends_on:
       - web
+
+  redis:
+    image: redis:7-alpine
+    container_name: desd-redis-1
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:
