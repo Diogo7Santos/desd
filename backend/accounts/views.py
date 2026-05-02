@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import admin
+from django.core.cache import cache
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -22,6 +23,7 @@ User = get_user_model()
 
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_SECONDS = 15 * 60
+GENERIC_LOGIN_ERROR = "Invalid login credentials."
 
 
 def _has_role(user, role: str) -> bool:
@@ -53,15 +55,36 @@ def _is_locked_out(request):
     return False
 
 
-def _record_failed_login(request, email):
+def _client_ip(request):
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
+def _cache_lockout_key(email: str, ip: str) -> str:
+    return f"auth:failed:{email.lower()}:{ip}"
+
+
+def _is_cache_locked_out(email: str, ip: str) -> bool:
+    key = _cache_lockout_key(email, ip)
+    return int(cache.get(key, 0) or 0) >= MAX_LOGIN_ATTEMPTS
+
+
+def _record_failed_login(request, email, ip):
     request.session["failed_login_attempts"] = request.session.get("failed_login_attempts", 0) + 1
     request.session["last_failed_login_ts"] = timezone.now().timestamp()
-    logger.warning("Failed login attempt for email=%s", email)
+    key = _cache_lockout_key(email, ip)
+    attempts = int(cache.get(key, 0) or 0) + 1
+    cache.set(key, attempts, LOCKOUT_SECONDS)
+    logger.warning("Failed login attempt for email=%s ip=%s attempts=%s", email, ip, attempts)
 
 
-def _clear_failed_logins(request):
+def _clear_failed_logins(request, email=None, ip=None):
     request.session["failed_login_attempts"] = 0
     request.session["last_failed_login_ts"] = 0
+    if email and ip:
+        cache.delete(_cache_lockout_key(email, ip))
 
 
 def login_page(request):
@@ -75,8 +98,9 @@ def login_page(request):
         password = form.cleaned_data["password"]
         selected_role = form.cleaned_data["role"]
         remember_me = form.cleaned_data.get("remember_me", False)
+        ip = _client_ip(request)
 
-        if _is_locked_out(request):
+        if _is_locked_out(request) or _is_cache_locked_out(email, ip):
             messages.error(request, "Too many failed login attempts. Please try again later.")
             return render(request, "accounts/login.html", {"form": form})
 
@@ -91,12 +115,13 @@ def login_page(request):
             user = None
 
         if user is None:
-            _record_failed_login(request, email)
-            messages.error(request, "Invalid email or password.")
+            _record_failed_login(request, email, ip)
+            messages.error(request, GENERIC_LOGIN_ERROR)
         elif not _has_role(user, selected_role):
-            messages.error(request, "Role does not match this account.")
+            _record_failed_login(request, email, ip)
+            messages.error(request, GENERIC_LOGIN_ERROR)
         else:
-            _clear_failed_logins(request)
+            _clear_failed_logins(request, email=email, ip=ip)
             login(request, user)
 
             if remember_me:
