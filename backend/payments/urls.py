@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .views import (
+    admin_financial_report_csv,
+    admin_financial_report_page,
     CommissionReportAPIView,
     PaymentRecordListCreateAPIView,
     SettlementGenerationAPIView,
@@ -40,4 +42,6 @@ urlpatterns = [
     path("payments/records/", payment_records_page, name="payments-records-page"),
     path("payments/settlements/", settlements_page, name="payments-settlements-page"),
     path("payments/reports/commission/", commission_report_page, name="payments-report-page"),
+    path("payments/reports/network-commission/", admin_financial_report_page, name="admin-financial-report"),
+    path("payments/reports/network-commission.csv", admin_financial_report_csv, name="admin-financial-report-csv"),
 ]

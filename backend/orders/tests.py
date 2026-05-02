@@ -92,3 +92,11 @@ class OrderStripeIntegrationTests(TestCase):
         self.assertEqual(records.count(), 2)
         self.assertTrue(all(r.checkout_session_id == "cs_test_integration_1" for r in records))
         self.assertTrue(all(r.payment_provider == "STRIPE_TEST" for r in records))
+
+        # Before webhook payment confirmation, stock and cart are unchanged.
+        self.product_a.refresh_from_db()
+        self.product_b.refresh_from_db()
+        self.assertEqual(self.product_a.stock_quantity, 100)
+        self.assertEqual(self.product_b.stock_quantity, 100)
+        cart.refresh_from_db()
+        self.assertEqual(cart.items.count(), 2)
