@@ -48,6 +48,7 @@ class TC003ProductCreateTest(TestCase):
         )
 
         self.url = reverse("catalog:product_create")
+        self.update_url_name = "catalog:product_update"
 
     # ---------------------------------------------------
     # SUCCESS CASE
@@ -152,3 +153,48 @@ class TC003ProductCreateTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Product.objects.count(), 0)
+
+    def test_producer_cannot_edit_another_producer_product(self):
+        other_producer = User.objects.create_user(
+            username="producer2",
+            password="StrongPassword123!",
+        )
+        if hasattr(other_producer, "role"):
+            other_producer.role = "producer"
+            other_producer.save()
+        if hasattr(other_producer, "is_producer"):
+            other_producer.is_producer = True
+            other_producer.save()
+
+        other_product = Product.objects.create(
+            producer=other_producer,
+            name="Other Producer Product",
+            category=Product.Category.VEGETABLES,
+            description="Owned by producer2",
+            price=Decimal("2.00"),
+            unit="kg",
+            availability=Product.Availability.AVAILABLE,
+            stock_quantity=10,
+            allergens="none",
+            harvest_date=date.today(),
+        )
+
+        self.client.login(username="producer1", password="StrongPassword123!")
+        response = self.client.post(
+            reverse(self.update_url_name, kwargs={"pk": other_product.pk}),
+            {
+                "name": "Attempted overwrite",
+                "category": Product.Category.VEGETABLES,
+                "description": "Invalid attempt",
+                "price": "9.99",
+                "unit": "kg",
+                "availability": Product.Availability.AVAILABLE,
+                "stock_quantity": 20,
+                "allergens": "none",
+                "harvest_date": date.today(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        other_product.refresh_from_db()
+        self.assertEqual(other_product.name, "Other Producer Product")

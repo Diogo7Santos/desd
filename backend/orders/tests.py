@@ -276,3 +276,105 @@ class OrderStripeIntegrationTests(TestCase):
         self.assertTrue(items_b)
         self.assertTrue(all(i.producer_id == self.producer_b.id for i in items_b))
         self.assertTrue(all(i.product.producer_id != self.producer_a.id for i in items_b))
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_customer_cannot_access_another_customer_order_detail(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_authz_detail_1",
+            url="https://checkout.stripe.com/pay/cs_test_authz_detail_1",
+            payment_intent="pi_test_authz_detail_1",
+        )
+        other_customer = User.objects.create_user(
+            username="other-customer@example.com",
+            email="other-customer@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "1 Owner Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.client.logout()
+
+        self.client.login(username=other_customer.username, password="strong-password-123")
+        response = self.client.get(reverse("orders:order_detail", kwargs={"order_id": order.id}))
+        self.assertEqual(response.status_code, 404)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_customer_cannot_access_another_customer_order_confirmation(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_authz_confirm_1",
+            url="https://checkout.stripe.com/pay/cs_test_authz_confirm_1",
+            payment_intent="pi_test_authz_confirm_1",
+        )
+        other_customer = User.objects.create_user(
+            username="other-customer-2@example.com",
+            email="other-customer-2@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "2 Owner Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.client.logout()
+
+        self.client.login(username=other_customer.username, password="strong-password-123")
+        response = self.client.get(reverse("orders:order_confirmation", kwargs={"order_id": order.id}))
+        self.assertEqual(response.status_code, 404)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_customer_cannot_reorder_another_customer_order(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_authz_reorder_1",
+            url="https://checkout.stripe.com/pay/cs_test_authz_reorder_1",
+            payment_intent="pi_test_authz_reorder_1",
+        )
+        other_customer = User.objects.create_user(
+            username="other-customer-3@example.com",
+            email="other-customer-3@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "3 Owner Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.client.logout()
+
+        self.client.login(username=other_customer.username, password="strong-password-123")
+        response = self.client.post(reverse("orders:reorder", kwargs={"order_id": order.id}), follow=True)
+        self.assertEqual(response.status_code, 404)

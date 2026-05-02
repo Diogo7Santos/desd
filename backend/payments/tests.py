@@ -748,6 +748,42 @@ class PaymentsApiRBACTests(APITestCase):
         self.assertEqual(Decimal(str(resp.data["totals"]["gross"])), Decimal("100.00"))
         self.assertEqual(Decimal(str(resp.data["totals"]["commission"])), Decimal("5.00"))
 
+    def test_producer_cannot_query_other_producer_payment_records(self):
+        token = Token.objects.create(user=self.producer)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        resp = self.client.get(
+            reverse("payment-records"),
+            {"producer_reference": "999999"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 0)
+
+    def test_producer_cannot_query_other_producer_settlements(self):
+        SettlementBatch.objects.create(
+            producer_reference="999999",
+            week_start=(timezone.now() - timedelta(days=7)).date(),
+            week_end=timezone.now().date(),
+            total_gross=Decimal("100.00"),
+            total_commission=Decimal("5.00"),
+            total_net=Decimal("95.00"),
+        )
+        SettlementBatch.objects.create(
+            producer_reference=str(self.producer.id),
+            week_start=(timezone.now() - timedelta(days=7)).date(),
+            week_end=timezone.now().date(),
+            total_gross=Decimal("40.00"),
+            total_commission=Decimal("2.00"),
+            total_net=Decimal("38.00"),
+        )
+        token = Token.objects.create(user=self.producer)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        resp = self.client.get(
+            reverse("settlement-list"),
+            {"producer_reference": "999999"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 0)
+
 
 class AdminFinancialReportingTests(TestCase):
     def setUp(self):
