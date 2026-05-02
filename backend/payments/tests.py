@@ -978,3 +978,108 @@ class AdminFinancialReportingTests(TestCase):
         report = response.context["report"]
         self.assertEqual(report["totals"]["gross"], Decimal("40.00"))
         self.assertEqual(report["processed_payment_count"], 1)
+
+    def test_financial_report_previous_2_weeks_filtering(self):
+        now = timezone.now()
+        within_two_weeks = now - timedelta(days=3)
+        outside_two_weeks = now - timedelta(days=30)
+
+        self._create_order_with_payments(
+            grosses_by_producer={self.producer_a: Decimal("70.00")},
+            paid_at=within_two_weeks,
+        )
+        self._create_order_with_payments(
+            grosses_by_producer={self.producer_a: Decimal("30.00")},
+            paid_at=outside_two_weeks,
+        )
+
+        self.client.login(username=self.admin.username, password="strong-password-123")
+        response = self.client.get(reverse("admin-financial-report"), {"range": "previous_2_weeks"})
+        self.assertEqual(response.status_code, 200)
+
+        report = response.context["report"]
+        self.assertEqual(report["range_mode"], "previous_2_weeks")
+        self.assertEqual(report["totals"]["gross"], Decimal("70.00"))
+        self.assertEqual(report["totals"]["commission"], Decimal("3.50"))
+        self.assertEqual(report["totals"]["net"], Decimal("66.50"))
+        self.assertEqual(report["processed_order_count"], 1)
+
+    def test_processed_order_count_matches_distinct_orders_in_filtered_paid_records(self):
+        now = timezone.now()
+        order_one = self._create_order_with_payments(
+            grosses_by_producer={self.producer_a: Decimal("20.00")},
+            paid_at=now,
+            order_status=Order.Status.CONFIRMED,
+        )
+        self._create_order_with_payments(
+            grosses_by_producer={
+                self.producer_a: Decimal("30.00"),
+                self.producer_b: Decimal("50.00"),
+            },
+            paid_at=now,
+            order_status=Order.Status.CONFIRMED,
+        )
+        order_failed = self._create_order_with_payments(
+            grosses_by_producer={self.producer_b: Decimal("90.00")},
+            paid_at=now,
+            order_status=Order.Status.CONFIRMED,
+        )
+        PaymentRecord.objects.filter(order_reference=order_failed.order_number).update(
+            status=PaymentRecord.Status.FAILED
+        )
+
+        self.client.login(username=self.admin.username, password="strong-password-123")
+        response = self.client.get(
+            reverse("admin-financial-report"),
+            {
+                "range": "current_month",
+                "order_status": "CONFIRMED",
+                "payment_status": "PAID",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        report = response.context["report"]
+
+        filtered_refs = {
+            row["order_reference"]
+            for row in report["rows"]
+        }
+        self.assertIn(order_one.order_number, filtered_refs)
+        self.assertEqual(report["processed_order_count"], len(filtered_refs))
+        self.assertEqual(report["processed_order_count"], 2)
+
+    def test_financial_report_csv_export_respects_active_filters(self):
+        now = timezone.now()
+        self._create_order_with_payments(
+            grosses_by_producer={self.producer_a: Decimal("55.00")},
+            paid_at=now,
+            order_status=Order.Status.CONFIRMED,
+        )
+        filtered_out_order = self._create_order_with_payments(
+            grosses_by_producer={self.producer_b: Decimal("80.00")},
+            paid_at=now,
+            order_status=Order.Status.CANCELLED,
+        )
+        PaymentRecord.objects.filter(order_reference=filtered_out_order.order_number).update(
+            status=PaymentRecord.Status.FAILED
+        )
+
+        self.client.login(username=self.admin.username, password="strong-password-123")
+        response = self.client.get(
+            reverse("admin-financial-report-csv"),
+            {
+                "range": "current_month",
+                "producer_reference": str(self.producer_a.id),
+                "payment_status": "PAID",
+                "order_status": "CONFIRMED",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.content.decode("utf-8")
+        self.assertIn("Range,current_month", payload)
+        self.assertIn("Total Gross,55.00", payload)
+        self.assertIn("Total Commission (5%),2.75", payload)
+        self.assertIn("Total Producer Payout (95%),52.25", payload)
+        self.assertIn("Processed Orders,1", payload)
+        self.assertIn(f",CONFIRMED,{self.producer_a.id},55.00,55.00,2.75,52.25,PAID,", payload)
+        self.assertNotIn(str(self.producer_b.id), payload)
