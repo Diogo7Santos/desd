@@ -47,6 +47,15 @@
           {{ label }}
         </a>
       {% endfor %}
+
+      <a class="chip {% if allergen_filter == 'with_allergens' %}chip-active{% endif %}"
+         href="{% if selected_category %}{% url 'catalog:category_list' category=selected_category %}{% else %}{% url 'catalog:product_list' %}{% endif %}?allergen_filter=with_allergens">
+        With Allergens
+      </a>
+      <a class="chip {% if allergen_filter == 'without_allergens' %}chip-active{% endif %}"
+         href="{% if selected_category %}{% url 'catalog:category_list' category=selected_category %}{% else %}{% url 'catalog:product_list' %}{% endif %}?allergen_filter=without_allergens">
+        No Known Allergens
+      </a>
     </div>
   </div>
 
@@ -72,6 +81,9 @@
               <span class="badge">{{ product.get_category_display }}</span>
               <span class="badge">{{ product.get_availability_display }}</span>
               <span class="badge">Stock: {{ product.stock_quantity }}</span>
+              {% if product.allergens and product.allergens|lower != "none" and product.allergens|lower != "no known allergens" %}
+                <span class="badge">Allergen Warning</span>
+              {% endif %}
             </div>
 
             <small>Producer: {{ product.producer.username }}</small>

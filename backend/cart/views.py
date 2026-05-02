@@ -5,6 +5,13 @@ from django.http import JsonResponse, HttpResponseForbidden
 from catalog.models import Product
 from .models import Cart, CartItem
 
+SAFE_ALLERGEN_DECLARATIONS = {"none", "no known allergens"}
+
+
+def _has_real_allergens(product: Product) -> bool:
+    declared = (product.allergens or "").strip().lower()
+    return declared not in SAFE_ALLERGEN_DECLARATIONS
+
 
 @login_required
 def add_to_cart(request, product_id):
@@ -27,6 +34,13 @@ def add_to_cart(request, product_id):
     # Check stock
     if product.stock_quantity <= 0:
         messages.error(request, f"{product.name} is out of stock.")
+        return redirect('catalog:product_detail', pk=product_id)
+
+    if _has_real_allergens(product) and request.POST.get("allergen_ack") != "on":
+        messages.error(
+            request,
+            "Please acknowledge the allergen warning before adding this product to your cart.",
+        )
         return redirect('catalog:product_detail', pk=product_id)
     
     # Get or create cart for user

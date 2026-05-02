@@ -163,3 +163,59 @@ class CartTC006Tests(TestCase):
         self.assertIn(self.producer_two, grouped)
         self.assertIn(item_a, grouped[self.producer])
         self.assertIn(item_b, grouped[self.producer_two])
+
+    def test_allergen_product_requires_acknowledgement_for_add_to_cart(self):
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        response = self.client.post(
+            reverse("cart:add_to_cart", kwargs={"product_id": self.second_producer_product.id}),
+            {"quantity": 1},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            reverse("catalog:product_detail", kwargs={"pk": self.second_producer_product.id}),
+        )
+        self.assertFalse(
+            CartItem.objects.filter(
+                cart__user=self.customer,
+                product=self.second_producer_product,
+            ).exists()
+        )
+
+    def test_allergen_product_can_be_added_with_acknowledgement(self):
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        response = self.client.post(
+            reverse("cart:add_to_cart", kwargs={"product_id": self.second_producer_product.id}),
+            {"quantity": 1, "allergen_ack": "on"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("cart:view_cart"))
+        self.assertTrue(
+            CartItem.objects.filter(
+                cart__user=self.customer,
+                product=self.second_producer_product,
+            ).exists()
+        )
+
+    def test_safe_product_can_be_added_without_acknowledgement(self):
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        response = self.client.post(
+            reverse("cart:add_to_cart", kwargs={"product_id": self.available_product.id}),
+            {"quantity": 1},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("cart:view_cart"))
+        self.assertTrue(
+            CartItem.objects.filter(
+                cart__user=self.customer,
+                product=self.available_product,
+            ).exists()
+        )
+
+    def test_cart_renders_allergen_warning_for_allergen_products(self):
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.second_producer_product, quantity=1)
+        response = self.client.get(reverse("cart:view_cart"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Allergen Warning")

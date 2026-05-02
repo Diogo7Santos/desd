@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+{% endblock %}
+
+{% block title %}Network Commission Report{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Network Commission Report (Admin)</h2>
+    <form method="get" style="margin-bottom: 16px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div>
+            <label for="range">Range</label>
+            <select id="range" name="range">
+                <option value="previous_2_weeks" {% if report.range_mode == "previous_2_weeks" %}selected{% endif %}>Previous 2 Weeks</option>
+                <option value="current_month" {% if report.range_mode == "current_month" %}selected{% endif %}>Current Month</option>
+                <option value="ytd" {% if report.range_mode == "ytd" %}selected{% endif %}>Year to Date</option>
+                <option value="custom" {% if report.range_mode == "custom" %}selected{% endif %}>Custom</option>
+            </select>
+        </div>
+        <div>
+            <label for="start_date">Start Date</label>
+            <input id="start_date" type="date" name="start_date" value="{{ report.start_date|date:'Y-m-d' }}">
+        </div>
+        <div>
+            <label for="end_date">End Date</label>
+            <input id="end_date" type="date" name="end_date" value="{{ report.end_date|date:'Y-m-d' }}">
+        </div>
+        <div>
+            <label for="producer_reference">Producer Ref</label>
+            <input id="producer_reference" type="text" name="producer_reference" value="{{ report.producer_reference }}">
+        </div>
+        <div>
+            <label for="payment_status">Payment Status</label>
+            <select id="payment_status" name="payment_status">
+                <option value="PAID" {% if report.payment_status == "PAID" %}selected{% endif %}>PAID</option>
+                <option value="PENDING" {% if report.payment_status == "PENDING" %}selected{% endif %}>PENDING</option>
+                <option value="FAILED" {% if report.payment_status == "FAILED" %}selected{% endif %}>FAILED</option>
+                <option value="REFUNDED" {% if report.payment_status == "REFUNDED" %}selected{% endif %}>REFUNDED</option>
+                <option value="ALL" {% if report.payment_status == "ALL" %}selected{% endif %}>ALL</option>
+            </select>
+        </div>
+        <div>
+            <label for="order_status">Order Status</label>
+            <select id="order_status" name="order_status">
+                <option value="" {% if not report.order_status %}selected{% endif %}>ALL</option>
+                <option value="PENDING_PAYMENT" {% if report.order_status == "PENDING_PAYMENT" %}selected{% endif %}>PENDING_PAYMENT</option>
+                <option value="PENDING" {% if report.order_status == "PENDING" %}selected{% endif %}>PENDING</option>
+                <option value="CONFIRMED" {% if report.order_status == "CONFIRMED" %}selected{% endif %}>CONFIRMED</option>
+                <option value="READY" {% if report.order_status == "READY" %}selected{% endif %}>READY</option>
+                <option value="DELIVERED" {% if report.order_status == "DELIVERED" %}selected{% endif %}>DELIVERED</option>
+                <option value="CANCELLED" {% if report.order_status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
+            </select>
+        </div>
+        <div style="display: flex; align-items: end; gap: 8px;">
+            <button type="submit">Apply</button>
+        </div>
+    </form>
+
+    <p>Period: {{ report.start_date }} to {{ report.end_date }}</p>
+    <p>
+        <a href="{% url 'admin-financial-report-csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+    </p>
+
+    <div class="cards">
+        <article class="card">
+            <h3>Total Value</h3>
+            <p>{{ report.totals.gross }}</p>
+        </article>
+        <article class="card">
+            <h3>Network Commission (5%)</h3>
+            <p>{{ report.totals.commission }}</p>
+        </article>
+        <article class="card">
+            <h3>Producer Payout (95%)</h3>
+            <p>{{ report.totals.net }}</p>
+        </article>
+        <article class="card">
+            <h3>Processed Payments / Orders</h3>
+            <p>{{ report.processed_payment_count }} / {{ report.processed_order_count }}</p>
+        </article>
+    </div>
+
+    <h3>Year-to-Date Summary</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Gross</th>
+                <th>Commission</th>
+                <th>Payout</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ report.ytd_totals.gross }}</td>
+                <td>{{ report.ytd_totals.commission }}</td>
+                <td>{{ report.ytd_totals.net }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Monthly Summary</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Gross</th>
+                <th>Commission</th>
+                <th>Payout</th>
+                <th>Payments</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.monthly_rows %}
+            <tr>
+                <td>{{ row.month }}</td>
+                <td>{{ row.gross }}</td>
+                <td>{{ row.commission }}</td>
+                <td>{{ row.net }}</td>
+                <td>{{ row.payments }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No records in this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Producer Breakdown</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Producer Ref</th>
+                <th>Gross</th>
+                <th>Commission</th>
+                <th>Payout</th>
+                <th>Payments</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.producer_breakdown %}
+            <tr>
+                <td>{{ row.producer_reference }}</td>
+                <td>{{ row.gross }}</td>
+                <td>{{ row.commission }}</td>
+                <td>{{ row.net }}</td>
+                <td>{{ row.payments }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No producer rows in this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Payment and Order Breakdown</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Payment</th>
+                <th>Order</th>
+                <th>Order Status</th>
+                <th>Producer Ref</th>
+                <th>Producer Share</th>
+                <th>Commission (5%)</th>
+                <th>Payout (95%)</th>
+                <th>Payment Status</th>
+                <th>Paid At</th>
+                <th>Multi-vendor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.rows %}
+            <tr>
+                <td>
+                    {% if row.payment_admin_url %}
+                    <a href="{{ row.payment_admin_url }}">{{ row.transaction_reference }}</a>
+                    {% else %}
+                    {{ row.transaction_reference }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.order_admin_url %}
+                    <a href="{{ row.order_admin_url }}">{{ row.order_reference }}</a>
+                    {% else %}
+                    {{ row.order_reference }}
+                    {% endif %}
+                </td>
+                <td>{{ row.order_status }}</td>
+                <td>{{ row.producer_reference }}</td>
+                <td>{{ row.producer_share }}</td>
+                <td>{{ row.commission_amount }}</td>
+                <td>{{ row.net_amount }}</td>
+                <td>{{ row.status }}</td>
+                <td>{{ row.paid_at|default:"-" }}</td>
+                <td>{% if row.is_multi_vendor %}Yes{% else %}No{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10">No matching payment rows.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

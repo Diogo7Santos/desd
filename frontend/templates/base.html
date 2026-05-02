@@ -33,6 +33,9 @@
                     <a href="{% url 'payments-records-page' %}">Payment Records</a>
                     <a href="{% url 'payments-settlements-page' %}">Settlements</a>
                     <a href="{% url 'payments-report-page' %}">Commission Report</a>
+                {% elif user.role == "ADMIN" %}
+                    <a href="/admin/">Django Admin</a>
+                    <a href="{% url 'admin-financial-report' %}">Financial Reports</a>
                 {% else %}
                     <a href="{% url 'cart:view_cart' %}">Cart</a>
                     <a href="{% url 'orders:order_history' %}">Orders</a>

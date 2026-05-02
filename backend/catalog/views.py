@@ -13,6 +13,24 @@ from .forms import ProductForm
 from .models import Product
 
 
+SAFE_ALLERGEN_DECLARATIONS = {"none", "no known allergens"}
+
+
+def _allergen_filter_key(request: HttpRequest) -> str:
+    value = (request.GET.get("allergen_filter") or "").strip().lower()
+    if value in {"with_allergens", "without_allergens"}:
+        return value
+    return ""
+
+
+def _apply_allergen_filter(queryset, allergen_filter: str):
+    if allergen_filter == "with_allergens":
+        return queryset.exclude(allergens__iregex=r"^\s*(none|no known allergens)\s*$")
+    if allergen_filter == "without_allergens":
+        return queryset.filter(allergens__iregex=r"^\s*(none|no known allergens)\s*$")
+    return queryset
+
+
 def _is_producer(user) -> bool:
     """
     Best-effort producer check that works across common account designs.
@@ -51,8 +69,9 @@ def _available_products_qs():
 # ----------------------------
 
 def product_list(request: HttpRequest) -> HttpResponse:
+    allergen_filter = _allergen_filter_key(request)
     products = (
-        _available_products_qs()
+        _apply_allergen_filter(_available_products_qs(), allergen_filter)
         .select_related("producer")
         .order_by("-created_at")
     )
@@ -60,6 +79,8 @@ def product_list(request: HttpRequest) -> HttpResponse:
         "products": products,
         "selected_category": None,
         "categories": Product.Category.choices,
+        "allergen_filter": allergen_filter,
+        "safe_allergen_declarations": SAFE_ALLERGEN_DECLARATIONS,
     }
     return render(request, "pages/product_list.html", context)
 
@@ -69,8 +90,9 @@ def category_list(request: HttpRequest, category: str) -> HttpResponse:
     if category not in valid_categories:
         raise Http404("Unknown category")
 
+    allergen_filter = _allergen_filter_key(request)
     products = (
-        _available_products_qs()
+        _apply_allergen_filter(_available_products_qs(), allergen_filter)
         .filter(category=category)
         .select_related("producer")
         .order_by("-created_at")
@@ -80,6 +102,8 @@ def category_list(request: HttpRequest, category: str) -> HttpResponse:
         "products": products,
         "selected_category": category,
         "categories": Product.Category.choices,
+        "allergen_filter": allergen_filter,
+        "safe_allergen_declarations": SAFE_ALLERGEN_DECLARATIONS,
     }
     return render(request, "pages/product_list.html", context)
 

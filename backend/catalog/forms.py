@@ -110,6 +110,10 @@ class ProductForm(forms.ModelForm):
         - lowercases for consistency (optional, but helpful)
         """
         raw = self.cleaned_data.get("allergens", "") or ""
+        if not raw.strip():
+            raise forms.ValidationError(
+                "Allergen declaration is required. Use 'None' or 'No known allergens' when applicable."
+            )
         # Split by commas, trim, drop empties
         parts = [p.strip() for p in raw.split(",")]
         parts = [p for p in parts if p]

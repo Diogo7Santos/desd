@@ -40,6 +40,11 @@
         {% if field.help_text %}
           <small>{{ field.help_text }}</small>
         {% endif %}
+        {% if field.name == "allergens" %}
+          <small>
+            Required: declare allergens explicitly. Use "None" or "No known allergens" when safe.
+          </small>
+        {% endif %}
 
       </div>
     {% endfor %}

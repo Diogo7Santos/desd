@@ -27,8 +27,6 @@ GENERIC_LOGIN_ERROR = "Invalid login credentials."
 
 
 def _has_role(user, role: str) -> bool:
-    if role == User.Role.ADMIN:
-        return user.is_staff or user.is_superuser or getattr(user, "role", None) == User.Role.ADMIN
     return getattr(user, "role", None) == role
 
 
