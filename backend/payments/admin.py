@@ -16,7 +16,7 @@ class PaymentRecordAdmin(admin.ModelAdmin):
         "status",
         "paid_at",
     )
-    list_filter = ("status", "currency")
+    list_filter = ("status", "currency", "payment_provider", "paid_at", "created_at")
     search_fields = (
         "transaction_reference",
         "order_reference",
@@ -38,7 +38,7 @@ class SettlementBatchAdmin(admin.ModelAdmin):
         "total_net",
         "status",
     )
-    list_filter = ("status",)
+    list_filter = ("status", "week_start", "week_end")
     search_fields = ("producer_reference",)
 
 
