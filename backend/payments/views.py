@@ -32,6 +32,15 @@ from .stripe_gateway import StripeGateway
 logger = logging.getLogger(__name__)
 
 
+def _final_fulfilled_statuses():
+    from orders.models import Order
+
+    statuses = {Order.Status.DELIVERED}
+    if hasattr(Order.Status, "COMPLETED"):
+        statuses.add(Order.Status.COMPLETED)
+    return statuses
+
+
 def admin_required(view_func):
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
@@ -341,10 +350,15 @@ class SettlementGenerationAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        from orders.models import Order
+
         serializer = SettlementGenerationRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         week_start = serializer.validated_data["week_start"]
         week_end = serializer.validated_data["week_end"]
+        eligible_order_refs = Order.objects.filter(
+            status__in=_final_fulfilled_statuses()
+        ).values_list("order_number", flat=True)
 
         paid_records = (
             PaymentRecord.objects.filter(
@@ -352,6 +366,7 @@ class SettlementGenerationAPIView(APIView):
                 paid_at__date__gte=week_start,
                 paid_at__date__lte=week_end,
                 settlement_item__isnull=True,
+                order_reference__in=eligible_order_refs,
             )
             .values("producer_reference")
             .annotate(
@@ -382,6 +397,7 @@ class SettlementGenerationAPIView(APIView):
                         paid_at__date__lte=week_end,
                         producer_reference=producer_group["producer_reference"],
                         settlement_item__isnull=True,
+                        order_reference__in=eligible_order_refs,
                     )
                     for record in producer_records:
                         SettlementItem.objects.create(settlement=settlement, payment_record=record)

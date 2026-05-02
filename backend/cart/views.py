@@ -22,12 +22,12 @@ def add_to_cart(request, product_id):
     # Check product availability
     if not product.is_available:
         messages.error(request, f"{product.name} is currently unavailable.")
-        return redirect('catalog:product_detail', product_id=product_id)
+        return redirect('catalog:product_detail', pk=product_id)
     
     # Check stock
     if product.stock_quantity <= 0:
         messages.error(request, f"{product.name} is out of stock.")
-        return redirect('catalog:product_detail', product_id=product_id)
+        return redirect('catalog:product_detail', pk=product_id)
     
     # Get or create cart for user
     cart, created = Cart.objects.get_or_create(user=request.user)
@@ -38,7 +38,7 @@ def add_to_cart(request, product_id):
     # Validate quantity against stock
     if quantity > product.stock_quantity:
         messages.error(request, f"Only {product.stock_quantity} {product.unit} available.")
-        return redirect('catalog:product_detail', product_id=product_id)
+        return redirect('catalog:product_detail', pk=product_id)
     
     # Add or update cart item
     cart_item, item_created = CartItem.objects.get_or_create(

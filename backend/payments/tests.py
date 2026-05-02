@@ -40,14 +40,33 @@ class SettlementGenerationTests(APITestCase):
             username="payments-admin@example.com",
             email="payments-admin@example.com",
             password="strong-password-123",
+            role="ADMIN",
         )
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        self.customer = User.objects.create_user(
+            username="settlement-customer@example.com",
+            email="settlement-customer@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+
+    def _create_order(self, *, status, total=Decimal("100.00")):
+        return Order.objects.create(
+            customer=self.customer,
+            delivery_address="1 Settlement Street",
+            delivery_postcode="BS1 1AA",
+            delivery_date=(timezone.now() + timedelta(days=3)).date(),
+            total_amount=total,
+            status=status,
+        )
 
     def test_generate_settlement_groups_paid_records_by_producer(self):
         paid_at = timezone.now()
+        delivered_a = self._create_order(status=Order.Status.DELIVERED)
+        delivered_b = self._create_order(status=Order.Status.DELIVERED)
         PaymentRecord.objects.create(
-            order_reference="ORD-1",
+            order_reference=delivered_a.order_number,
             transaction_reference="TXN-1001",
             producer_reference="producer-1",
             gross_amount=Decimal("50.00"),
@@ -56,7 +75,7 @@ class SettlementGenerationTests(APITestCase):
             paid_at=paid_at,
         )
         PaymentRecord.objects.create(
-            order_reference="ORD-2",
+            order_reference=delivered_b.order_number,
             transaction_reference="TXN-1002",
             producer_reference="producer-1",
             gross_amount=Decimal("100.00"),
@@ -79,6 +98,154 @@ class SettlementGenerationTests(APITestCase):
         self.assertEqual(settlement.total_gross, Decimal("150.00"))
         self.assertEqual(settlement.total_commission, Decimal("15.00"))
         self.assertEqual(settlement.total_net, Decimal("135.00"))
+
+    def test_paid_and_delivered_is_included(self):
+        paid_at = timezone.now()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        eligible = PaymentRecord.objects.create(
+            order_reference=delivered.order_number,
+            transaction_reference="TXN-ELIGIBLE",
+            producer_reference="producer-a",
+            gross_amount=Decimal("25.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-a")
+        self.assertEqual(settlement.items.count(), 1)
+        self.assertEqual(settlement.items.first().payment_record_id, eligible.id)
+
+    def test_paid_but_not_delivered_is_excluded(self):
+        paid_at = timezone.now()
+        pending = self._create_order(status=Order.Status.PENDING)
+        PaymentRecord.objects.create(
+            order_reference=pending.order_number,
+            transaction_reference="TXN-PAID-NOT-DELIVERED",
+            producer_reference="producer-b",
+            gross_amount=Decimal("30.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-b").exists())
+
+    def test_not_paid_but_delivered_is_excluded(self):
+        paid_at = timezone.now()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        PaymentRecord.objects.create(
+            order_reference=delivered.order_number,
+            transaction_reference="TXN-DELIVERED-NOT-PAID",
+            producer_reference="producer-c",
+            gross_amount=Decimal("35.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PENDING,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-c").exists())
+
+    def test_already_settled_is_excluded(self):
+        from .models import SettlementItem
+
+        paid_at = timezone.now()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        settled_record = PaymentRecord.objects.create(
+            order_reference=delivered.order_number,
+            transaction_reference="TXN-ALREADY-SETTLED",
+            producer_reference="producer-d",
+            gross_amount=Decimal("40.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        existing = SettlementBatch.objects.create(
+            producer_reference="producer-d",
+            week_start=week_start,
+            week_end=week_end,
+            total_gross=Decimal("40.00"),
+            total_commission=Decimal("4.00"),
+            total_net=Decimal("36.00"),
+        )
+        SettlementItem.objects.create(settlement=existing, payment_record=settled_record)
+
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(SettlementBatch.objects.filter(producer_reference="producer-d").count(), 1)
+        self.assertEqual(existing.items.count(), 1)
+
+    def test_totals_remain_correct_per_producer(self):
+        paid_at = timezone.now()
+        delivered_a = self._create_order(status=Order.Status.DELIVERED)
+        delivered_b = self._create_order(status=Order.Status.DELIVERED)
+        PaymentRecord.objects.create(
+            order_reference=delivered_a.order_number,
+            transaction_reference="TXN-TOTAL-1",
+            producer_reference="producer-e",
+            gross_amount=Decimal("40.00"),
+            commission_rate=Decimal("0.0500"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+        PaymentRecord.objects.create(
+            order_reference=delivered_b.order_number,
+            transaction_reference="TXN-TOTAL-2",
+            producer_reference="producer-e",
+            gross_amount=Decimal("60.00"),
+            commission_rate=Decimal("0.0500"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-e")
+        self.assertEqual(settlement.total_gross, Decimal("100.00"))
+        self.assertEqual(settlement.total_commission, Decimal("5.00"))
+        self.assertEqual(settlement.total_net, Decimal("95.00"))
 
 
 @override_settings(STRIPE_SECRET_KEY="sk_test_dummy", STRIPE_WEBHOOK_SECRET="whsec_dummy")
