@@ -161,3 +161,74 @@
   @media (min-width: 1100px) {
     .product-card { grid-column: span 4; }
   }
+
+/* FILTER SIDEBAR LAYOUT    */
+
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.filter-card {
+  position: sticky;
+  top: 90px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: white;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.filter-card h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: white;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.catalog-results {
+  min-width: 0;
+}
+
+.producer-dashboard-link {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 900px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-card {
+    position: static;
+  }
+}
