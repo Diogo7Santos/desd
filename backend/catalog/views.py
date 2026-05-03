@@ -46,6 +46,61 @@ def _available_products_qs():
     return Product.objects.filter(availability=Product.Availability.AVAILABLE)
 
 
+def _producer_filter_options():
+    """
+    Producer dropdown options for the customer-facing catalog filter.
+    Only includes producers who currently have available products.
+    """
+    return (
+        _available_products_qs()
+        .select_related("producer")
+        .values("producer__id", "producer__username")
+        .distinct()
+        .order_by("producer__username")
+    )
+
+
+def _apply_catalog_filters(request: HttpRequest, products):
+    """
+    Applies customer-facing catalog filters:
+    - search query
+    - minimum price
+    - maximum price
+    - selected producer
+    """
+    search_query = (request.GET.get("q") or "").strip()
+    min_price = (request.GET.get("min_price") or "").strip()
+    max_price = (request.GET.get("max_price") or "").strip()
+    selected_producer = (request.GET.get("producer") or "").strip()
+
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(producer__username__icontains=search_query)
+            | Q(producer__first_name__icontains=search_query)
+            | Q(producer__last_name__icontains=search_query)
+        )
+
+    if min_price:
+        products = products.filter(price__gte=min_price)
+
+    if max_price:
+        products = products.filter(price__lte=max_price)
+
+    if selected_producer:
+        products = products.filter(producer_id=selected_producer)
+
+    filter_context = {
+        "search_query": search_query,
+        "min_price": min_price,
+        "max_price": max_price,
+        "selected_producer": selected_producer,
+    }
+
+    return products, filter_context
+
+
 # ----------------------------
 # Customer-facing views
 # ----------------------------
@@ -56,10 +111,15 @@ def product_list(request: HttpRequest) -> HttpResponse:
         .select_related("producer")
         .order_by("-created_at")
     )
+
+    products, filter_context = _apply_catalog_filters(request, products)
+
     context = {
         "products": products,
         "selected_category": None,
         "categories": Product.Category.choices,
+        "producers": _producer_filter_options(),
+        **filter_context,
     }
     return render(request, "pages/product_list.html", context)
 
@@ -76,10 +136,14 @@ def category_list(request: HttpRequest, category: str) -> HttpResponse:
         .order_by("-created_at")
     )
 
+    products, filter_context = _apply_catalog_filters(request, products)
+
     context = {
         "products": products,
         "selected_category": category,
         "categories": Product.Category.choices,
+        "producers": _producer_filter_options(),
+        **filter_context,
     }
     return render(request, "pages/product_list.html", context)
 
