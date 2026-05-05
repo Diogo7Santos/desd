@@ -147,10 +147,6 @@ def place_order(request):
         if producer_id not in producer_totals:
             producer_totals[producer_id] = Decimal('0.00')
         producer_totals[producer_id] += cart_item.subtotal
-        
-        # Decrement product stock
-        cart_item.product.stock_quantity -= cart_item.quantity
-        cart_item.product.save()
     
     # Create payment records (one per producer)
     for producer_id, subtotal in producer_totals.items():
@@ -174,9 +170,6 @@ def place_order(request):
         changed_by=request.user,
         notes="Order placed by customer; awaiting payment",
     )
-    
-    # Clear the cart
-    cart.items.all().delete()
     
     success_url = request.build_absolute_uri(f"/orders/confirmation/{order.id}/")
     cancel_url = request.build_absolute_uri("/orders/checkout/")

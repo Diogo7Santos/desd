@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
 from .models import Address, CustomerProfile, ProducerProfile
+from . import views as account_views
 
 User = get_user_model()
 
@@ -85,7 +88,7 @@ class AccountsTestCases(TestCase):
             follow=True,
         )
 
-        self.assertRedirects(response, reverse("producer_home"))
+        self.assertRedirects(response, reverse("catalog:producer_products"))
 
         user = User.objects.get(email="jane.smith@bristolvalleyfarm.com")
         self.assertEqual(user.username, "jane.smith@bristolvalleyfarm.com")
@@ -162,7 +165,7 @@ class AccountsTestCases(TestCase):
             follow=True,
         )
         self.assertEqual(wrong_password_response.status_code, 200)
-        self.assertContains(wrong_password_response, "Invalid email or password.")
+        self.assertContains(wrong_password_response, account_views.GENERIC_LOGIN_ERROR)
 
         missing_user_response = self.client.post(
             reverse("login"),
@@ -174,7 +177,148 @@ class AccountsTestCases(TestCase):
             follow=True,
         )
         self.assertEqual(missing_user_response.status_code, 200)
-        self.assertContains(missing_user_response, "Invalid email or password.")
+        self.assertContains(missing_user_response, account_views.GENERIC_LOGIN_ERROR)
+
+        wrong_role_response = self.client.post(
+            reverse("login"),
+            data={
+                "email": "sec@example.com",
+                "password": "StrongPass123!",
+                "role": User.Role.PRODUCER,
+            },
+            follow=True,
+        )
+        self.assertEqual(wrong_role_response.status_code, 200)
+        self.assertContains(wrong_role_response, account_views.GENERIC_LOGIN_ERROR)
+
+    @patch("accounts.views.logger.warning")
+    def test_tc022_failed_login_attempts_are_logged(self, mocked_warning):
+        self.create_customer_user(email="logme@example.com", password="StrongPass123!")
+        self.client.post(
+            reverse("login"),
+            data={
+                "email": "logme@example.com",
+                "password": "WrongPassword999!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertTrue(mocked_warning.called)
+
+    def test_tc022_bruteforce_lockout_and_success_resets_counter(self):
+        self.create_customer_user(email="lockout@example.com", password="StrongPass123!")
+
+        # Prime failed attempts and then recover with a successful login.
+        for _ in range(2):
+            self.client.post(
+                reverse("login"),
+                data={
+                    "email": "lockout@example.com",
+                    "password": "WrongPassword999!",
+                    "role": User.Role.CUSTOMER,
+                },
+                follow=True,
+            )
+        success = self.client.post(
+            reverse("login"),
+            data={
+                "email": "lockout@example.com",
+                "password": "StrongPass123!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertEqual(success.status_code, 200)
+        self.client.post(reverse("logout"), follow=True)
+
+        # Counter should have reset; lockout should happen only after max failed attempts.
+        for _ in range(account_views.MAX_LOGIN_ATTEMPTS):
+            self.client.post(
+                reverse("login"),
+                data={
+                    "email": "lockout@example.com",
+                    "password": "WrongPassword999!",
+                    "role": User.Role.CUSTOMER,
+                },
+                follow=True,
+            )
+        locked = self.client.post(
+            reverse("login"),
+            data={
+                "email": "lockout@example.com",
+                "password": "StrongPass123!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertContains(locked, "Too many failed login attempts. Please try again later.")
+
+    def test_tc022_failed_login_attempts_increment_session_and_cache_counters(self):
+        email = "counter@example.com"
+        self.create_customer_user(email=email, password="StrongPass123!")
+
+        self.client.post(
+            reverse("login"),
+            data={
+                "email": email,
+                "password": "WrongPassword999!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertEqual(self.client.session.get("failed_login_attempts"), 1)
+        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
+        self.assertEqual(int(cache.get(cache_key, 0)), 1)
+
+        self.client.post(
+            reverse("login"),
+            data={
+                "email": email,
+                "password": "WrongPassword999!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertEqual(self.client.session.get("failed_login_attempts"), 2)
+        self.assertEqual(int(cache.get(cache_key, 0)), 2)
+
+    def test_tc022_successful_login_resets_failed_login_counters(self):
+        email = "reset@example.com"
+        self.create_customer_user(email=email, password="StrongPass123!")
+
+        self.client.post(
+            reverse("login"),
+            data={
+                "email": email,
+                "password": "WrongPassword999!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertEqual(self.client.session.get("failed_login_attempts"), 1)
+        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
+        self.assertEqual(int(cache.get(cache_key, 0)), 1)
+
+        self.client.post(
+            reverse("login"),
+            data={
+                "email": email,
+                "password": "StrongPass123!",
+                "role": User.Role.CUSTOMER,
+            },
+            follow=True,
+        )
+        self.assertEqual(self.client.session.get("failed_login_attempts"), 0)
+        self.assertEqual(self.client.session.get("last_failed_login_ts"), 0)
+        self.assertIsNone(cache.get(cache_key))
+
+    def test_tc022_logout_terminates_session(self):
+        user = self.create_customer_user(email="logout-check@example.com")
+        self.client.login(username=user.email, password="StrongPass123!")
+        self.assertIn("_auth_user_id", self.client.session)
+
+        self.client.post(reverse("logout"), follow=True)
+        self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_tc022_rbac_and_session_management(self):
         customer = self.create_customer_user(email="rbac-customer@example.com")
@@ -214,7 +358,7 @@ class AccountsTestCases(TestCase):
             },
             follow=True,
         )
-        self.assertRedirects(login_producer, reverse("producer_home"))
+        self.assertRedirects(login_producer, reverse("catalog:producer_products"))
         self.assertFalse(self.client.session.get_expire_at_browser_close())
 
         allowed_response = self.client.get(reverse("producer_home"))
