@@ -18,5 +18,11 @@ urlpatterns = [
     path("product/<int:pk>/edit/", views.product_update, name="product_update"),
 
     # Product details
+    path(
+        "product/<int:product_id>/review/<int:order_item_id>/",
+        views.create_review,
+        name="create_review",
+    ),
+    path("reviews/<int:review_id>/respond/", views.respond_to_review, name="respond_review"),
     path("product/<int:pk>/", views.product_detail, name="product_detail"),
 ]

@@ -70,6 +70,47 @@
     margin-bottom: 0.25rem;
 }
 
+.cart-food-miles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.food-miles-pill {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.food-miles-low {
+    background: #e8f5e9;
+    color: #256029;
+}
+
+.food-miles-medium {
+    background: #fff5db;
+    color: #8a5a00;
+}
+
+.food-miles-high {
+    background: #fdecea;
+    color: #8b2f2f;
+}
+
+.food-miles-unavailable {
+    color: #60646c;
+}
+
+.food-miles-note {
+    color: #60646c;
+    font-size: 12px;
+}
+
 /* Product Image */
 .product-image {
     width: 80px;
@@ -152,6 +193,20 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 18px 20px;
+}
+
+.cart-food-miles-summary {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    background: #f7f8f3;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.food-miles-summary-note {
+    font-size: 13px;
+    color: #4d5451;
 }
 
 .summary-card .cart-action-link {

@@ -38,7 +38,7 @@ class Cart(models.Model):
         """
         from collections import defaultdict
         grouped = defaultdict(list)
-        for item in self.items.select_related('product__producer'):
+        for item in self.items.select_related('product__producer', 'product__producer__producer_profile'):
             grouped[item.product.producer].append(item)
         return dict(grouped)
 

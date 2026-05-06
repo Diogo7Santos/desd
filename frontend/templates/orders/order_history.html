@@ -12,6 +12,11 @@
     <div class="history-header">
         <h1>Order History</h1>
         <p>View and manage your past orders.</p>
+        {% if show_recurring_orders_link %}
+        <a href="{% url 'orders:recurring_orders' %}" class="history-action-btn">
+            <i class="bi bi-arrow-repeat"></i> Recurring Orders
+        </a>
+        {% endif %}
     </div>
 
     {% if orders %}

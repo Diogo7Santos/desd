@@ -1,0 +1,132 @@
+.recurring-detail-container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+}
+
+.recurring-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.recurring-detail-header h1 {
+    margin: 0 0 0.35rem;
+}
+
+.recurring-detail-header p {
+    margin: 0;
+    color: #607078;
+}
+
+.recurring-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 0.95fr);
+    gap: 1.25rem;
+}
+
+.recurring-panel {
+    background: #fff;
+    border: 1px solid #dde5df;
+    border-radius: 18px;
+    padding: 1.2rem;
+    box-shadow: 0 14px 40px rgba(21, 34, 26, 0.06);
+    margin-bottom: 1rem;
+}
+
+.recurring-panel h3 {
+    margin-top: 0;
+}
+
+.recurring-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.panel-label {
+    display: block;
+    color: #607078;
+    font-size: 0.88rem;
+    margin-bottom: 0.25rem;
+}
+
+.panel-row {
+    margin-top: 0.9rem;
+}
+
+.panel-note {
+    color: #607078;
+}
+
+.recurring-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.recurring-table th,
+.recurring-table td {
+    padding: 0.8rem 0.65rem;
+    border-bottom: 1px solid #edf1ee;
+    text-align: left;
+}
+
+.recurring-input {
+    width: 100%;
+    border: 1px solid #cfd9d2;
+    border-radius: 12px;
+    padding: 0.7rem 0.8rem;
+}
+
+.recurring-input-small {
+    max-width: 90px;
+}
+
+.recurring-detail-btn {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    border: 1px solid #bdcbbf;
+    background: #f7fbf8;
+    color: #17382a;
+    padding: 0.8rem 1rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.recurring-detail-primary {
+    background: #1f6a43;
+    border-color: #1f6a43;
+    color: #fff;
+}
+
+.recurring-danger {
+    border-color: #c9635d;
+    color: #a63c35;
+    background: #fff4f3;
+}
+
+.recurring-action {
+    margin-top: 0.8rem;
+}
+
+.recurring-detail-warning {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 14px;
+    background: #fff4d6;
+    color: #775100;
+}
+
+@media (max-width: 900px) {
+    .recurring-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -55,6 +55,20 @@
                                         </div>
                                         <div class="col-md-4">
                                             <h6>{{ item.product.name }}</h6>
+                                            {% if item.food_miles %}
+                                                <div class="cart-food-miles">
+                                                    <span class="food-miles-pill {{ item.food_miles.impact_class }}">
+                                                        Food Miles: {{ item.food_miles.miles_display }}
+                                                    </span>
+                                                    <small class="food-miles-note">
+                                                        {{ item.food_miles.local_radius_message }}
+                                                    </small>
+                                                </div>
+                                            {% else %}
+                                                <small class="food-miles-note food-miles-unavailable">
+                                                    Food miles unavailable for this item
+                                                </small>
+                                            {% endif %}
                                             <p class="text-muted small mb-1">£{{ item.product.price }} per {{ item.product.unit }}</p>
                                             {% if item.product.allergens %}
                                                 <p class="text-danger small mb-0">
@@ -110,6 +124,18 @@
                             <h5 class="text-success">£{{ total_price }}</h5>
                         </div>
                         
+                        {% if food_miles_summary %}
+                            <div class="cart-food-miles-summary">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Estimated Food Miles:</span>
+                                    <strong>{{ food_miles_summary.total_miles_display }}</strong>
+                                </div>
+                                <p class="food-miles-summary-note mb-3">
+                                    {{ food_miles_summary.message }}
+                                </p>
+                            </div>
+                        {% endif %}
+
                         <a href="{% url 'orders:checkout' %}" class="cart-action-link">
                             <i class="bi bi-cart-check"></i> Proceed to Checkout
                         </a>

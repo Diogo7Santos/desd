@@ -3,7 +3,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import Product
+from .models import Product, ProductReview
 
 
 class ProductForm(forms.ModelForm):
@@ -142,3 +142,86 @@ class ProductForm(forms.ModelForm):
             )
 
         return cleaned
+
+
+class ProductReviewForm(forms.ModelForm):
+    STAR_CHOICES = [
+        (5, "5 stars"),
+        (4, "4 stars"),
+        (3, "3 stars"),
+        (2, "2 stars"),
+        (1, "1 star"),
+    ]
+
+    rating = forms.TypedChoiceField(
+        choices=STAR_CHOICES,
+        coerce=int,
+        widget=forms.Select(
+            attrs={
+                "class": "form-control",
+            }
+        ),
+    )
+
+    class Meta:
+        model = ProductReview
+        fields = ["rating", "title", "review_text", "anonymous"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g., Excellent quality and flavour",
+                }
+            ),
+            "review_text": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 6,
+                    "placeholder": "Share your experience with other customers.",
+                }
+            ),
+            "anonymous": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                }
+            ),
+        }
+
+    def __init__(self, *args, customer=None, product=None, order_item=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.customer = customer
+        self.product = product
+        self.order_item = order_item
+
+    def clean(self):
+        cleaned = super().clean()
+
+        if not self.customer or not self.product or not self.order_item:
+            raise forms.ValidationError("Review setup is incomplete. Please try again.")
+
+        if ProductReview.objects.filter(product=self.product, customer=self.customer).exclude(
+            pk=self.instance.pk
+        ).exists():
+            raise forms.ValidationError("You have already reviewed this product.")
+
+        if self.order_item.product_id != self.product.id:
+            raise forms.ValidationError("This review link does not match the product.")
+
+        if self.order_item.order.customer_id != self.customer.id:
+            raise forms.ValidationError("You can only review your own delivered purchases.")
+
+        order_delivered = self.order_item.order.status == "DELIVERED"
+        item_delivered = self.order_item.status == "DELIVERED"
+        if not order_delivered and not item_delivered:
+            raise forms.ValidationError("Reviews can only be submitted after delivery.")
+
+        return cleaned
+
+    def save(self, commit=True):
+        review = super().save(commit=False)
+        review.customer = self.customer
+        review.product = self.product
+        review.order_item = self.order_item
+        if commit:
+            review.save()
+        return review

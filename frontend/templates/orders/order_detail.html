@@ -50,7 +50,7 @@
 
                         <div class="detail-info-block">
                             <span class="detail-label">Total Amount</span>
-                            <span class="detail-value total-value">£{{ order.total_amount }}</span>
+                            <span class="detail-value total-value">&pound;{{ order.total_amount }}</span>
                         </div>
                     </div>
 
@@ -100,6 +100,7 @@
                                         <th>Quantity</th>
                                         <th>Price</th>
                                         <th class="text-right">Subtotal</th>
+                                        <th>Review</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -107,15 +108,29 @@
                                         <tr>
                                             <td>{{ item.product_name }}</td>
                                             <td>{{ item.quantity }}</td>
-                                            <td>£{{ item.unit_price }}</td>
-                                            <td class="text-right">£{{ item.subtotal }}</td>
+                                            <td>&pound;{{ item.unit_price }}</td>
+                                            <td class="text-right">&pound;{{ item.subtotal }}</td>
+                                            <td>
+                                                {% if item.customer_review %}
+                                                    <a href="{{ item.review_url }}" class="order-review-link order-review-link-muted">
+                                                        Review Submitted
+                                                    </a>
+                                                {% elif item.can_write_review %}
+                                                    <a href="{{ item.review_url }}" class="order-review-link">
+                                                        Write Review
+                                                    </a>
+                                                {% else %}
+                                                    <span class="order-review-pending">Available after delivery</span>
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
                                     <tr>
                                         <td colspan="3" class="text-right"><strong>Subtotal</strong></td>
-                                        <td class="text-right"><strong>£{{ data.subtotal }}</strong></td>
+                                        <td class="text-right"><strong>&pound;{{ data.subtotal }}</strong></td>
+                                        <td></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -139,6 +154,12 @@
                                 <i class="bi bi-arrow-repeat"></i> Reorder These Items
                             </button>
                         </form>
+
+                        {% if show_recurring_orders_link %}
+                        <a href="{% url 'orders:recurring_orders' %}" class="detail-action-btn">
+                            <i class="bi bi-calendar-week"></i> Manage Recurring Orders
+                        </a>
+                        {% endif %}
 
                         <a href="{% url 'catalog:product_list' %}" class="detail-action-btn">
                             <i class="bi bi-shop"></i> Browse Products

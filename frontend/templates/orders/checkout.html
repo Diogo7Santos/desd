@@ -21,6 +21,13 @@
         </div>
     {% endif %}
 
+    {% if is_community_group_order %}
+        <div class="checkout-info-banner">
+            <strong>Community Group Order:</strong>
+            Larger multi-producer orders are supported here. Use the delivery instructions to tell producers how to coordinate your drop-off.
+        </div>
+    {% endif %}
+
     <div class="checkout-layout">
         <div class="checkout-main">
             <div class="checkout-card">
@@ -78,8 +85,61 @@
                                 class="checkout-input checkout-textarea"
                                 rows="2"
                                 placeholder="e.g., Leave at side door, call on arrival"
-                            ></textarea>
+                            >{{ customer_default_delivery_instructions }}</textarea>
                         </div>
+
+                        {% if can_create_recurring_orders %}
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" name="make_recurring">
+                                Make this a recurring order
+                            </label>
+                            <small class="form-help">
+                                Create a reusable weekly or fortnightly restaurant order template from this checkout.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurring_name">Recurring Order Name</label>
+                            <input
+                                type="text"
+                                name="recurring_name"
+                                id="recurring_name"
+                                class="checkout-input"
+                                value="Weekly Restaurant Order"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurrence_interval">Recurrence</label>
+                            <select name="recurrence_interval" id="recurrence_interval" class="checkout-input">
+                                {% for value, label in recurrence_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order_weekday">Place Order Every</label>
+                            <select name="order_weekday" id="order_weekday" class="checkout-input">
+                                {% for value, label in weekday_choices %}
+                                <option value="{{ value }}" {% if value == 0 %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery_weekday">Deliver Every</label>
+                            <select name="delivery_weekday" id="delivery_weekday" class="checkout-input">
+                                {% for value, label in weekday_choices %}
+                                <option value="{{ value }}" {% if value == 2 %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-help">
+                                Delivery day must be at least 48 hours after the order day.
+                            </small>
+                        </div>
+                        {% endif %}
 
                         <div class="checkout-actions">
                             <button type="submit" class="checkout-action-btn">
