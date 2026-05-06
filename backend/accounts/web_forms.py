@@ -149,6 +149,13 @@ class RegisterForm(forms.Form):
                     if not cleaned.get(field):
                         self.add_error(field, "This field is required for community group accounts.")
 
+            if str(customer_type) == str(CustomerProfile.CustomerType.YOUNG_PROFESSIONAL):
+                if not cleaned.get("contact_person"):
+                    self.add_error("contact_person", "This field is required for young professional accounts.")
+                    
+            if str(customer_type) == str(CustomerProfile.CustomerType.FAMILIES):
+                if not cleaned.get("contact_person"):
+                    self.add_error("contact_person", "This field is required for families accounts.")
         return cleaned
 
 

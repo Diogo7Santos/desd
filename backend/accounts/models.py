@@ -53,6 +53,8 @@ class CustomerProfile(models.Model):
         INDIVIDUAL = 0, "Individual"
         RESTAURANT = 1, "Restaurant"
         COMMUNITY_GROUP = 2, "Community Group"
+        YOUNG_PROFESSIONAL = 3, "Young Professional"
+        FAMILIES = 4, "Families"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="customer_profile")
     customer_type_id = models.IntegerField(choices=CustomerType.choices)
@@ -74,4 +76,12 @@ class CustomerProfile(models.Model):
     @property
     def is_community_group(self):
         return self.customer_type_id == self.CustomerType.COMMUNITY_GROUP
+    
+    @property
+    def is_young_professional(self):
+        return self.customer_type_id == self.CustomerType.YOUNG_PROFESSIONAL
+
+    @property
+    def is_families(self):
+        return self.customer_type_id == self.CustomerType.FAMILIES
 # Create your models here.
