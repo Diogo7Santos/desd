@@ -51,3 +51,10 @@ def dashboard(request):
         "recent_settlement_batches": SettlementBatch.objects.order_by("-created_at")[:5],
     }
     return render(request, "admin_dashboard/dashboard.html", context)
+
+
+@login_required
+@admin_role_required
+def orders_overview(request):
+    orders = Order.objects.select_related("customer").order_by("-created_at")
+    return render(request, "admin_dashboard/orders_overview.html", {"orders": orders})

@@ -1,3 +1,5 @@
+import csv
+import io
 from datetime import timedelta
 from decimal import Decimal
 from types import SimpleNamespace
@@ -15,6 +17,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from .models import PaymentRecord, ProcessedWebhookEvent, SettlementBatch
+from .services_settlements import generate_settlements_for_week
+from .tasks import generate_weekly_settlements
 
 User = get_user_model()
 
@@ -125,12 +129,38 @@ class SettlementGenerationTests(APITestCase):
         self.assertEqual(settlement.items.count(), 1)
         self.assertEqual(settlement.items.first().payment_record_id, eligible.id)
 
-    def test_paid_but_not_delivered_is_excluded(self):
+    def test_paid_and_ready_is_included(self):
+        paid_at = timezone.now()
+        ready = self._create_order(status=Order.Status.READY)
+        eligible = PaymentRecord.objects.create(
+            order_reference=ready.order_number,
+            transaction_reference="TXN-ELIGIBLE-READY",
+            producer_reference="producer-ready",
+            gross_amount=Decimal("45.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-ready")
+        self.assertEqual(settlement.items.count(), 1)
+        self.assertEqual(settlement.items.first().payment_record_id, eligible.id)
+
+    def test_paid_but_not_ready_or_delivered_is_excluded(self):
         paid_at = timezone.now()
         pending = self._create_order(status=Order.Status.PENDING)
         PaymentRecord.objects.create(
             order_reference=pending.order_number,
-            transaction_reference="TXN-PAID-NOT-DELIVERED",
+            transaction_reference="TXN-PAID-NOT-READY-DELIVERED",
             producer_reference="producer-b",
             gross_amount=Decimal("30.00"),
             commission_rate=Decimal("0.1000"),
@@ -148,6 +178,30 @@ class SettlementGenerationTests(APITestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-b").exists())
+
+    def test_unpaid_ready_is_excluded(self):
+        paid_at = timezone.now()
+        ready = self._create_order(status=Order.Status.READY)
+        PaymentRecord.objects.create(
+            order_reference=ready.order_number,
+            transaction_reference="TXN-READY-NOT-PAID",
+            producer_reference="producer-ready-unpaid",
+            gross_amount=Decimal("35.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PENDING,
+            paid_at=paid_at,
+        )
+
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        response = self.client.post(
+            reverse("settlement-generate"),
+            {"week_start": week_start, "week_end": week_end},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-ready-unpaid").exists())
 
     def test_not_paid_but_delivered_is_excluded(self):
         paid_at = timezone.now()
@@ -173,14 +227,14 @@ class SettlementGenerationTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-c").exists())
 
-    def test_already_settled_is_excluded(self):
+    def test_already_settled_ready_is_excluded(self):
         from .models import SettlementItem
 
         paid_at = timezone.now()
-        delivered = self._create_order(status=Order.Status.DELIVERED)
+        ready = self._create_order(status=Order.Status.READY)
         settled_record = PaymentRecord.objects.create(
-            order_reference=delivered.order_number,
-            transaction_reference="TXN-ALREADY-SETTLED",
+            order_reference=ready.order_number,
+            transaction_reference="TXN-ALREADY-SETTLED-READY",
             producer_reference="producer-d",
             gross_amount=Decimal("40.00"),
             commission_rate=Decimal("0.1000"),
@@ -246,6 +300,375 @@ class SettlementGenerationTests(APITestCase):
         self.assertEqual(settlement.total_gross, Decimal("100.00"))
         self.assertEqual(settlement.total_commission, Decimal("5.00"))
         self.assertEqual(settlement.total_net, Decimal("95.00"))
+
+
+class SettlementServiceAndTaskTests(APITestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(
+            username="settlement-task-customer@example.com",
+            email="settlement-task-customer@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+
+    def _create_order(self, *, status, total=Decimal("100.00")):
+        return Order.objects.create(
+            customer=self.customer,
+            delivery_address="2 Settlement Street",
+            delivery_postcode="BS2 2BB",
+            delivery_date=(timezone.now() + timedelta(days=3)).date(),
+            total_amount=total,
+            status=status,
+        )
+
+    def _create_paid_record(self, *, order, producer_reference, transaction_reference, paid_at):
+        return PaymentRecord.objects.create(
+            order_reference=order.order_number,
+            transaction_reference=transaction_reference,
+            producer_reference=producer_reference,
+            gross_amount=Decimal("50.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+
+    def test_shared_service_creates_settlement_for_paid_and_delivered(self):
+        paid_at = timezone.now()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered,
+            producer_reference="producer-service",
+            transaction_reference="TXN-SERVICE-1",
+            paid_at=paid_at,
+        )
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+
+        result = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(len(result["created_settlement_ids"]), 1)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-service")
+        self.assertEqual(settlement.items.count(), 1)
+
+    def test_shared_service_creates_settlement_for_paid_and_ready(self):
+        paid_at = timezone.now()
+        ready = self._create_order(status=Order.Status.READY)
+        self._create_paid_record(
+            order=ready,
+            producer_reference="producer-service-ready",
+            transaction_reference="TXN-SERVICE-READY-1",
+            paid_at=paid_at,
+        )
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+
+        result = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+
+        self.assertEqual(result["count"], 1)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-service-ready")
+        self.assertEqual(settlement.items.count(), 1)
+
+    def test_task_creates_settlements_for_previous_week(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()  # Wednesday
+        previous_week_start = fake_today - timedelta(days=fake_today.weekday() + 7)
+        paid_at = timezone.make_aware(timezone.datetime(2026, 5, 12, 10, 0, 0))
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered,
+            producer_reference="producer-task-week",
+            transaction_reference="TXN-TASK-WEEK-1",
+            paid_at=paid_at,
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 1)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-task-week")
+        self.assertEqual(settlement.week_start, previous_week_start)
+        self.assertEqual(settlement.week_end, previous_week_start + timedelta(days=6))
+
+    def test_task_creates_settlements_for_previous_week_ready_order(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()  # Wednesday
+        previous_week_start = fake_today - timedelta(days=fake_today.weekday() + 7)
+        paid_at = timezone.make_aware(timezone.datetime(2026, 5, 12, 10, 0, 0))
+        ready = self._create_order(status=Order.Status.READY)
+        self._create_paid_record(
+            order=ready,
+            producer_reference="producer-task-week-ready",
+            transaction_reference="TXN-TASK-WEEK-READY-1",
+            paid_at=paid_at,
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 1)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-task-week-ready")
+        self.assertEqual(settlement.week_start, previous_week_start)
+        self.assertEqual(settlement.week_end, previous_week_start + timedelta(days=6))
+
+    def test_task_excludes_unpaid_records(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        PaymentRecord.objects.create(
+            order_reference=delivered.order_number,
+            transaction_reference="TXN-TASK-UNPAID",
+            producer_reference="producer-task-unpaid",
+            gross_amount=Decimal("50.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PENDING,
+            paid_at=timezone.make_aware(timezone.datetime(2026, 5, 12, 9, 0, 0)),
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 0)
+        self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-task-unpaid").exists())
+
+    def test_task_excludes_orders_not_ready_or_delivered(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()
+        pending = self._create_order(status=Order.Status.PENDING)
+        self._create_paid_record(
+            order=pending,
+            producer_reference="producer-task-undelivered",
+            transaction_reference="TXN-TASK-UNDELIVERED",
+            paid_at=timezone.make_aware(timezone.datetime(2026, 5, 12, 11, 0, 0)),
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 0)
+        self.assertFalse(SettlementBatch.objects.filter(producer_reference="producer-task-undelivered").exists())
+
+    def test_task_excludes_already_settled_ready_records(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()
+        ready = self._create_order(status=Order.Status.READY)
+        paid_record = self._create_paid_record(
+            order=ready,
+            producer_reference="producer-task-settled",
+            transaction_reference="TXN-TASK-SETTLED",
+            paid_at=timezone.make_aware(timezone.datetime(2026, 5, 12, 11, 30, 0)),
+        )
+        week_start = fake_today - timedelta(days=fake_today.weekday() + 7)
+        week_end = week_start + timedelta(days=6)
+        existing = SettlementBatch.objects.create(
+            producer_reference="producer-task-settled",
+            week_start=week_start,
+            week_end=week_end,
+            total_gross=Decimal("50.00"),
+            total_commission=Decimal("5.00"),
+            total_net=Decimal("45.00"),
+        )
+        existing.items.create(payment_record=paid_record)
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 0)
+        self.assertEqual(SettlementBatch.objects.filter(producer_reference="producer-task-settled").count(), 1)
+
+    def test_task_is_idempotent_on_rerun(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered,
+            producer_reference="producer-task-idempotent",
+            transaction_reference="TXN-TASK-IDEMPOTENT",
+            paid_at=timezone.make_aware(timezone.datetime(2026, 5, 12, 12, 0, 0)),
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            first = generate_weekly_settlements()
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            second = generate_weekly_settlements()
+
+        self.assertEqual(first["count"], 1)
+        self.assertEqual(second["count"], 0)
+        self.assertEqual(SettlementBatch.objects.filter(producer_reference="producer-task-idempotent").count(), 1)
+        self.assertEqual(SettlementBatch.objects.get(producer_reference="producer-task-idempotent").items.count(), 1)
+
+    def test_task_multi_producer_grouping_remains_correct(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()
+        delivered_a = self._create_order(status=Order.Status.DELIVERED)
+        delivered_b = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered_a,
+            producer_reference="producer-task-a",
+            transaction_reference="TXN-TASK-A",
+            paid_at=timezone.make_aware(timezone.datetime(2026, 5, 12, 13, 0, 0)),
+        )
+        self._create_paid_record(
+            order=delivered_b,
+            producer_reference="producer-task-b",
+            transaction_reference="TXN-TASK-B",
+            paid_at=timezone.make_aware(timezone.datetime(2026, 5, 13, 13, 0, 0)),
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 2)
+        self.assertTrue(SettlementBatch.objects.filter(producer_reference="producer-task-a").exists())
+        self.assertTrue(SettlementBatch.objects.filter(producer_reference="producer-task-b").exists())
+
+    def test_existing_batch_with_zero_items_gets_repaired(self):
+        paid_at = timezone.now()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered,
+            producer_reference="producer-repair-zero",
+            transaction_reference="TXN-REPAIR-ZERO-1",
+            paid_at=paid_at,
+        )
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        settlement = SettlementBatch.objects.create(
+            producer_reference="producer-repair-zero",
+            week_start=week_start,
+            week_end=week_end,
+            total_gross=Decimal("0.00"),
+            total_commission=Decimal("0.00"),
+            total_net=Decimal("0.00"),
+        )
+
+        result = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+
+        self.assertEqual(result["count"], 0)
+        settlement.refresh_from_db()
+        self.assertEqual(settlement.items.count(), 1)
+        self.assertEqual(settlement.total_gross, Decimal("50.00"))
+        self.assertEqual(settlement.total_commission, Decimal("5.00"))
+        self.assertEqual(settlement.total_net, Decimal("45.00"))
+
+    def test_existing_batch_with_partial_items_links_only_missing_records(self):
+        from .models import SettlementItem
+
+        paid_at = timezone.now()
+        delivered_a = self._create_order(status=Order.Status.DELIVERED)
+        delivered_b = self._create_order(status=Order.Status.DELIVERED)
+        first = self._create_paid_record(
+            order=delivered_a,
+            producer_reference="producer-repair-partial",
+            transaction_reference="TXN-REPAIR-PARTIAL-1",
+            paid_at=paid_at,
+        )
+        second = self._create_paid_record(
+            order=delivered_b,
+            producer_reference="producer-repair-partial",
+            transaction_reference="TXN-REPAIR-PARTIAL-2",
+            paid_at=paid_at,
+        )
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        settlement = SettlementBatch.objects.create(
+            producer_reference="producer-repair-partial",
+            week_start=week_start,
+            week_end=week_end,
+            total_gross=Decimal("50.00"),
+            total_commission=Decimal("5.00"),
+            total_net=Decimal("45.00"),
+        )
+        SettlementItem.objects.create(settlement=settlement, payment_record=first)
+
+        result = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+
+        self.assertEqual(result["count"], 0)
+        settlement.refresh_from_db()
+        self.assertEqual(settlement.items.count(), 2)
+        self.assertTrue(settlement.items.filter(payment_record=first).exists())
+        self.assertTrue(settlement.items.filter(payment_record=second).exists())
+
+    def test_rerunning_generation_does_not_duplicate_settlement_items(self):
+        paid_at = timezone.now()
+        delivered = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered,
+            producer_reference="producer-no-dup-items",
+            transaction_reference="TXN-NO-DUP-ITEMS-1",
+            paid_at=paid_at,
+        )
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+
+        first = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+        second = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+
+        self.assertEqual(first["count"], 1)
+        self.assertEqual(second["count"], 0)
+        settlement = SettlementBatch.objects.get(producer_reference="producer-no-dup-items")
+        self.assertEqual(settlement.items.count(), 1)
+
+    def test_totals_are_corrected_for_existing_batch_after_linking(self):
+        paid_at = timezone.now()
+        delivered_a = self._create_order(status=Order.Status.DELIVERED)
+        delivered_b = self._create_order(status=Order.Status.DELIVERED)
+        self._create_paid_record(
+            order=delivered_a,
+            producer_reference="producer-correct-totals",
+            transaction_reference="TXN-CORRECT-TOTALS-1",
+            paid_at=paid_at,
+        )
+        PaymentRecord.objects.create(
+            order_reference=delivered_b.order_number,
+            transaction_reference="TXN-CORRECT-TOTALS-2",
+            producer_reference="producer-correct-totals",
+            gross_amount=Decimal("80.00"),
+            commission_rate=Decimal("0.1000"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=paid_at,
+        )
+        week_start = (paid_at - timedelta(days=paid_at.weekday())).date()
+        week_end = week_start + timedelta(days=6)
+        settlement = SettlementBatch.objects.create(
+            producer_reference="producer-correct-totals",
+            week_start=week_start,
+            week_end=week_end,
+            total_gross=Decimal("1.00"),
+            total_commission=Decimal("1.00"),
+            total_net=Decimal("1.00"),
+        )
+
+        result = generate_settlements_for_week(week_start=week_start, week_end=week_end)
+
+        self.assertEqual(result["count"], 0)
+        settlement.refresh_from_db()
+        self.assertEqual(settlement.items.count(), 2)
+        self.assertEqual(settlement.total_gross, Decimal("130.00"))
+        self.assertEqual(settlement.total_commission, Decimal("13.00"))
+        self.assertEqual(settlement.total_net, Decimal("117.00"))
+
+    def test_task_repairs_existing_batch_missing_items_via_shared_logic(self):
+        fake_today = timezone.datetime(2026, 5, 20).date()
+        previous_week_start = fake_today - timedelta(days=fake_today.weekday() + 7)
+        previous_week_end = previous_week_start + timedelta(days=6)
+        paid_at = timezone.make_aware(timezone.datetime(2026, 5, 12, 15, 0, 0))
+        ready = self._create_order(status=Order.Status.READY)
+        self._create_paid_record(
+            order=ready,
+            producer_reference="producer-task-repair-shared",
+            transaction_reference="TXN-TASK-REPAIR-SHARED-1",
+            paid_at=paid_at,
+        )
+        settlement = SettlementBatch.objects.create(
+            producer_reference="producer-task-repair-shared",
+            week_start=previous_week_start,
+            week_end=previous_week_end,
+            total_gross=Decimal("0.00"),
+            total_commission=Decimal("0.00"),
+            total_net=Decimal("0.00"),
+        )
+
+        with patch("payments.tasks.timezone.localdate", return_value=fake_today):
+            result = generate_weekly_settlements()
+
+        self.assertEqual(result["count"], 0)
+        settlement.refresh_from_db()
+        self.assertEqual(settlement.items.count(), 1)
+        self.assertEqual(settlement.total_gross, Decimal("50.00"))
 
 
 @override_settings(STRIPE_SECRET_KEY="sk_test_dummy", STRIPE_WEBHOOK_SECRET="whsec_dummy")
@@ -369,6 +792,7 @@ class StripePaymentFlowTests(APITestCase):
         self.assertIsNotNone(record.paid_at)
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertNotEqual(order.status, Order.Status.PENDING_PAYMENT)
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock_quantity, 27)
         cart.refresh_from_db()
@@ -1076,10 +1500,46 @@ class AdminFinancialReportingTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         payload = response.content.decode("utf-8")
-        self.assertIn("Range,current_month", payload)
-        self.assertIn("Total Gross,55.00", payload)
-        self.assertIn("Total Commission (5%),2.75", payload)
-        self.assertIn("Total Producer Payout (95%),52.25", payload)
-        self.assertIn("Processed Orders,1", payload)
-        self.assertIn(f",CONFIRMED,{self.producer_a.id},55.00,55.00,2.75,52.25,PAID,", payload)
-        self.assertNotIn(str(self.producer_b.id), payload)
+        reader = list(csv.reader(io.StringIO(payload)))
+
+        # Summary key/value section
+        summary = {row[0]: row[1] for row in reader if len(row) >= 2 and row[0]}
+        self.assertEqual(summary["Range"], "current_month")
+        self.assertEqual(summary["Total Gross"], "55.00")
+        self.assertEqual(summary["Total Commission (5%)"], "2.75")
+        self.assertEqual(summary["Total Producer Payout (95%)"], "52.25")
+        self.assertEqual(summary["Processed Orders"], "1")
+
+        # Locate tabular section and parse data rows structurally.
+        header = [
+            "Payment ID",
+            "Transaction",
+            "Order Ref",
+            "Order Status",
+            "Producer Ref",
+            "Producer Share",
+            "Gross",
+            "Commission",
+            "Payout",
+            "Payment Status",
+            "Paid At",
+            "Multi Vendor",
+        ]
+        header_idx = next(i for i, row in enumerate(reader) if row == header)
+        data_rows = [row for row in reader[header_idx + 1 :] if row and any(cell.strip() for cell in row)]
+        dict_rows = [dict(zip(header, row)) for row in data_rows]
+
+        # Included producer row is present with expected filtered values.
+        self.assertEqual(len(dict_rows), 1)
+        included = dict_rows[0]
+        self.assertEqual(included["Order Status"], "CONFIRMED")
+        self.assertEqual(included["Producer Ref"], str(self.producer_a.id))
+        self.assertEqual(included["Producer Share"], "55.00")
+        self.assertEqual(included["Gross"], "55.00")
+        self.assertEqual(included["Commission"], "2.75")
+        self.assertEqual(included["Payout"], "52.25")
+        self.assertEqual(included["Payment Status"], "PAID")
+
+        # Excluded producer has no rows in filtered CSV output.
+        producer_refs = {row["Producer Ref"] for row in dict_rows}
+        self.assertNotIn(str(self.producer_b.id), producer_refs)

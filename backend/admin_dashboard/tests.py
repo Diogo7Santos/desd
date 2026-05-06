@@ -53,6 +53,26 @@ class AdminDashboardAccessTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("login"), response.url)
 
+    def test_admin_can_access_orders_overview(self):
+        self.client.login(username=self.admin.username, password="strong-password-123")
+        response = self.client.get(reverse("admin_dashboard:orders_overview"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_producer_denied_orders_overview(self):
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        response = self.client.get(reverse("admin_dashboard:orders_overview"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_customer_denied_orders_overview(self):
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        response = self.client.get(reverse("admin_dashboard:orders_overview"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_unauthenticated_redirected_to_login_for_orders_overview(self):
+        response = self.client.get(reverse("admin_dashboard:orders_overview"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
+
 
 class AdminDashboardDataTests(TestCase):
     def setUp(self):
@@ -135,6 +155,7 @@ class AdminDashboardDataTests(TestCase):
         self.assertContains(response, reverse("admin-financial-report-csv"))
         self.assertContains(response, reverse("payments-records-page"))
         self.assertContains(response, reverse("payments-settlements-page"))
+        self.assertContains(response, reverse("admin_dashboard:orders_overview"))
         self.assertContains(response, reverse("admin:index"))
 
     def test_existing_payment_and_financial_routes_still_resolve(self):
@@ -142,3 +163,27 @@ class AdminDashboardDataTests(TestCase):
         self.assertTrue(reverse("admin-financial-report-csv"))
         self.assertTrue(reverse("payments-records-page"))
         self.assertTrue(reverse("payments-settlements-page"))
+
+    def test_orders_overview_shows_global_orders_from_multiple_customers(self):
+        customer_two = User.objects.create_user(
+            username="customer3@example.com",
+            email="customer3@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+        order_two = Order.objects.create(
+            customer=customer_two,
+            delivery_address="2 Test Road",
+            delivery_postcode="BS2 2BB",
+            delivery_date=(timezone.now() + timedelta(days=4)).date(),
+            total_amount=Decimal("75.00"),
+            status=Order.Status.CONFIRMED,
+        )
+
+        self.client.login(username=self.admin.username, password="strong-password-123")
+        response = self.client.get(reverse("admin_dashboard:orders_overview"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.order.order_number)
+        self.assertContains(response, order_two.order_number)
+        self.assertContains(response, self.customer.username)
+        self.assertContains(response, customer_two.username)

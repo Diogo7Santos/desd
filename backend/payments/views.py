@@ -18,8 +18,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import PaymentRecord, ProcessedWebhookEvent, SettlementBatch, SettlementItem
+from .models import PaymentRecord, ProcessedWebhookEvent, SettlementBatch
 from .services import create_checkout_session_for_order
+from .services_settlements import generate_settlements_for_week
 from .serializers import (
     CommissionReportQuerySerializer,
     PaymentRecordSerializer,
@@ -30,15 +31,6 @@ from .serializers import (
 from .stripe_gateway import StripeGateway
 
 logger = logging.getLogger(__name__)
-
-
-def _final_fulfilled_statuses():
-    from orders.models import Order
-
-    statuses = {Order.Status.DELIVERED}
-    if hasattr(Order.Status, "COMPLETED"):
-        statuses.add(Order.Status.COMPLETED)
-    return statuses
 
 
 def admin_required(view_func):
@@ -350,61 +342,14 @@ class SettlementGenerationAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        from orders.models import Order
-
         serializer = SettlementGenerationRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         week_start = serializer.validated_data["week_start"]
         week_end = serializer.validated_data["week_end"]
-        eligible_order_refs = Order.objects.filter(
-            status__in=_final_fulfilled_statuses()
-        ).values_list("order_number", flat=True)
-
-        paid_records = (
-            PaymentRecord.objects.filter(
-                status=PaymentRecord.Status.PAID,
-                paid_at__date__gte=week_start,
-                paid_at__date__lte=week_end,
-                settlement_item__isnull=True,
-                order_reference__in=eligible_order_refs,
-            )
-            .values("producer_reference")
-            .annotate(
-                gross=Sum("gross_amount"),
-                commission=Sum("commission_amount"),
-                net=Sum("net_amount"),
-            )
-        )
-
-        created_batches = []
-        with transaction.atomic():
-            for producer_group in paid_records:
-                settlement, created = SettlementBatch.objects.get_or_create(
-                    producer_reference=producer_group["producer_reference"],
-                    week_start=week_start,
-                    week_end=week_end,
-                    defaults={
-                        "total_gross": producer_group["gross"] or 0,
-                        "total_commission": producer_group["commission"] or 0,
-                        "total_net": producer_group["net"] or 0,
-                    },
-                )
-
-                if created:
-                    producer_records = PaymentRecord.objects.filter(
-                        status=PaymentRecord.Status.PAID,
-                        paid_at__date__gte=week_start,
-                        paid_at__date__lte=week_end,
-                        producer_reference=producer_group["producer_reference"],
-                        settlement_item__isnull=True,
-                        order_reference__in=eligible_order_refs,
-                    )
-                    for record in producer_records:
-                        SettlementItem.objects.create(settlement=settlement, payment_record=record)
-                    created_batches.append(settlement.id)
+        result = generate_settlements_for_week(week_start=week_start, week_end=week_end)
 
         return Response(
-            {"created_settlement_ids": created_batches, "count": len(created_batches)},
+            result,
             status=status.HTTP_201_CREATED,
         )
 
@@ -583,7 +528,7 @@ class StripeWebhookAPIView(APIView):
             except Cart.DoesNotExist:
                 pass
 
-            if order.status != Order.Status.PENDING:
+            if order.status == Order.Status.PENDING_PAYMENT:
                 order.status = Order.Status.PENDING
                 order.save(update_fields=["status", "updated_at"])
 

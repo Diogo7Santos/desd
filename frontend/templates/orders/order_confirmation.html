@@ -44,8 +44,14 @@
                             {{ order.delivery_date|date:"F d, Y" }}
                         </div>
                         <div class="col-md-6">
-                            <strong>Status:</strong><br>
+                            <strong>Fulfilment Status:</strong><br>
                             <span class="badge bg-warning">{{ order.get_status_display }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Payment Status:</strong><br>
+                            <span class="badge bg-success">{{ payment_status }}</span>
                         </div>
                     </div>
 

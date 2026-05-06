@@ -36,6 +36,52 @@ services:
       - db
       - redis
 
+  celery-worker:
+    build: ./backend
+    command: celery -A config worker -l info
+    volumes:
+      - ./backend:/app
+      - ./frontend:/frontend
+      - ./backend/media:/app/media
+      - static_volume:/app/staticfiles
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    build: ./backend
+    command: celery -A config beat -l info
+    volumes:
+      - ./backend:/app
+      - ./frontend:/frontend
+      - ./backend/media:/app/media
+      - static_volume:/app/staticfiles
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      - db
+      - redis
+
   nginx:
     image: nginx:latest
     ports:
