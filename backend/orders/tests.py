@@ -252,6 +252,8 @@ class OrderStripeIntegrationTests(TestCase):
         )
 
         order = Order.objects.get(customer=self.customer)
+        order.status = Order.Status.PENDING
+        order.save(update_fields=["status", "updated_at"])
 
         self.client.logout()
         self.client.login(username=self.producer_a.username, password="strong-password-123")
@@ -378,3 +380,184 @@ class OrderStripeIntegrationTests(TestCase):
         self.client.login(username=other_customer.username, password="strong-password-123")
         response = self.client.post(reverse("orders:reorder", kwargs={"order_id": order.id}), follow=True)
         self.assertEqual(response.status_code, 404)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_producer_dashboard_excludes_pending_payment_orders(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_hidden_unpaid_prod_1",
+            url="https://checkout.stripe.com/pay/cs_test_hidden_unpaid_prod_1",
+            payment_intent="pi_test_hidden_unpaid_prod_1",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "4 Hidden Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.assertEqual(order.status, Order.Status.PENDING_PAYMENT)
+
+        self.client.logout()
+        self.client.login(username=self.producer_a.username, password="strong-password-123")
+        response = self.client.get(reverse("orders:producer_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["orders_data"]), 0)
+        self.assertNotContains(response, order.order_number)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_customer_order_history_excludes_pending_payment_orders(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_hidden_unpaid_cust_1",
+            url="https://checkout.stripe.com/pay/cs_test_hidden_unpaid_cust_1",
+            payment_intent="pi_test_hidden_unpaid_cust_1",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "5 Hidden Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.assertEqual(order.status, Order.Status.PENDING_PAYMENT)
+
+        history = self.client.get(reverse("orders:order_history"))
+        self.assertEqual(history.status_code, 200)
+        self.assertNotContains(history, order.order_number)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_order_detail_blocks_pending_payment_order(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_block_detail_1",
+            url="https://checkout.stripe.com/pay/cs_test_block_detail_1",
+            payment_intent="pi_test_block_detail_1",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "6 Hidden Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.assertEqual(order.status, Order.Status.PENDING_PAYMENT)
+
+        detail = self.client.get(reverse("orders:order_detail", kwargs={"order_id": order.id}))
+        self.assertEqual(detail.status_code, 404)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_reorder_blocks_pending_payment_order(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_block_reorder_1",
+            url="https://checkout.stripe.com/pay/cs_test_block_reorder_1",
+            payment_intent="pi_test_block_reorder_1",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=1)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "7 Hidden Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.assertEqual(order.status, Order.Status.PENDING_PAYMENT)
+
+        reorder_response = self.client.post(reverse("orders:reorder", kwargs={"order_id": order.id}))
+        self.assertEqual(reorder_response.status_code, 404)
+
+    @patch("payments.stripe_gateway.stripe.Webhook.construct_event")
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_webhook_success_moves_order_to_fulfilment_and_surfaces_paid_state(self, stripe_create, construct_event):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_paid_state_1",
+            url="https://checkout.stripe.com/pay/cs_test_paid_state_1",
+            payment_intent="pi_test_paid_state_1",
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=2)
+        delivery_date = (timezone.now() + timedelta(days=3)).date().isoformat()
+        self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "10 Paid State Road",
+                "delivery_postcode": "BS1 1AA",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "",
+            },
+        )
+        order = Order.objects.get(customer=self.customer)
+        self.assertEqual(order.status, Order.Status.PENDING_PAYMENT)
+
+        construct_event.return_value = {
+            "id": "evt_paid_state_1",
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_test_paid_state_1",
+                    "payment_intent": "pi_test_paid_state_1",
+                }
+            },
+        }
+        webhook_response = self.client.post(
+            reverse("stripe-webhook"),
+            data=b"{}",
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="sig_test",
+        )
+        self.assertEqual(webhook_response.status_code, 200)
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertNotEqual(order.status, Order.Status.PENDING_PAYMENT)
+
+        self.client.logout()
+        self.client.login(username=self.producer_a.username, password="strong-password-123")
+        producer_dashboard = self.client.get(reverse("orders:producer_dashboard"))
+        self.assertEqual(producer_dashboard.status_code, 200)
+        self.assertContains(producer_dashboard, "Payment: PAID")
+        self.assertContains(producer_dashboard, "Pending")
+        self.assertNotContains(producer_dashboard, "Pending Payment")
+
+        self.client.logout()
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        order_history = self.client.get(reverse("orders:order_history"))
+        self.assertEqual(order_history.status_code, 200)
+        self.assertContains(order_history, "PAID")
+        self.assertNotContains(order_history, "Pending Payment")
+
+        order_detail = self.client.get(reverse("orders:order_detail", kwargs={"order_id": order.id}))
+        self.assertEqual(order_detail.status_code, 200)
+        self.assertContains(order_detail, "Payment")
+        self.assertContains(order_detail, "PAID")
+        self.assertNotContains(order_detail, "Pending Payment")

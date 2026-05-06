@@ -26,7 +26,9 @@
             <a href="{% url 'catalog:product_list' %}">Marketplace</a>
         
             {% if user.is_authenticated %}
-                {% if user.role == "PRODUCER" %}
+                {% if user.role == "ADMIN" %}
+                    <a href="{% url 'admin_dashboard:dashboard' %}">Admin Portal</a>
+                {% elif user.role == "PRODUCER" %}
                     <a href="{% url 'orders:producer_dashboard' %}">Incoming Orders</a>
                     <a href="{% url 'catalog:product_create' %}">Add Product</a>
                     <a href="{% url 'payments-dashboard' %}">Payments</a>

@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("admin-portal/", include("admin_dashboard.urls")),
     path("catalog/", include("catalog.urls")),
     path("p/", include("payments.urls")),
     path("", include("accounts.urls")), # Web views for accounts (login, register, dashboards)

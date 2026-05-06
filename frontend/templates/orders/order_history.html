@@ -14,9 +14,10 @@
         <p>View and manage your past orders.</p>
     </div>
 
-    {% if orders %}
+    {% if orders_data %}
         <div class="orders-grid">
-            {% for order in orders %}
+            {% for item in orders_data %}
+                {% with order=item.order %}
                 <div class="order-card">
                     <div class="order-card-header">
                         <div class="order-header-row">
@@ -28,6 +29,10 @@
                             <span class="status-badge status-{{ order.status|lower }}">
                                 {{ order.get_status_display }}
                             </span>
+                        </div>
+                        <div class="mt-2">
+                            <span class="info-label">Payment</span>
+                            <span class="info-value">{{ item.payment_status }}</span>
                         </div>
                     </div>
 
@@ -61,6 +66,7 @@
                         </form>
                     </div>
                 </div>
+                {% endwith %}
             {% endfor %}
         </div>
     {% else %}

@@ -33,6 +33,9 @@
                     <small class="text-muted">
                         <i class="bi bi-calendar"></i> Placed on {{ order_data.order.created_at|date:"F d, Y" }} at {{ order_data.order.created_at|date:"H:i" }}
                     </small>
+                    <div class="mt-2">
+                        <span class="badge bg-success-subtle text-success-emphasis border">Payment: {{ order_data.payment_status }}</span>
+                    </div>
                 </div>
                 <span class="status-badge-large status-{{ order_data.order.status|lower }}">
                     {{ order_data.order.get_status_display }}
