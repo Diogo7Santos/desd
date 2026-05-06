@@ -34,7 +34,7 @@ def _has_role(user, role: str) -> bool:
 
 def _redirect_by_user_role(user):
     if _has_role(user, User.Role.ADMIN):
-        return redirect("admin_home")
+        return redirect("admin_dashboard:dashboard")
     if _has_role(user, User.Role.PRODUCER):
         return redirect("catalog:producer_products")
     return redirect("catalog:product_list")
@@ -249,7 +249,7 @@ def producer_home(request):
 def admin_home(request):
     if not _has_role(request.user, User.Role.ADMIN):
         return HttpResponseForbidden("Forbidden: admin only.")
-    return render(request, admin.site.urls)  # This will render the default Django admin dashboard
+    return redirect("admin_dashboard:dashboard")  # This will render the default Django admin dashboard
 
 @login_required
 def account_page(request):
@@ -333,6 +333,8 @@ def is_verified_business_customer(user):
         and user.customer_profile.customer_type_id in [
             CustomerProfile.CustomerType.RESTAURANT,
             CustomerProfile.CustomerType.COMMUNITY_GROUP,
+            CustomerProfile.CustomerType.YOUNG_PROFESSIONAL,
+            CustomerProfile.CustomerType.FAMILIES,
         ]
         and user.customer_profile.is_business_verified
     )
@@ -351,4 +353,20 @@ def is_community_group_customer(user):
         and getattr(user, "role", None) == User.Role.CUSTOMER
         and hasattr(user, "customer_profile")
         and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.COMMUNITY_GROUP
+    )
+
+def is_young_professional_customer(user):
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.YOUNG_PROFESSIONAL
+    )
+
+def is_families_customer(user):     
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.FAMILIES
     )

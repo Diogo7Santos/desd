@@ -67,11 +67,13 @@ def _apply_catalog_filters(request: HttpRequest, products):
     - minimum price
     - maximum price
     - selected producer
+    - organic certification status
     """
     search_query = (request.GET.get("q") or "").strip()
     min_price = (request.GET.get("min_price") or "").strip()
     max_price = (request.GET.get("max_price") or "").strip()
     selected_producer = (request.GET.get("producer") or "").strip()
+    selected_organic = (request.GET.get("organic_status") or "").strip()
 
     if search_query:
         products = products.filter(
@@ -91,11 +93,15 @@ def _apply_catalog_filters(request: HttpRequest, products):
     if selected_producer:
         products = products.filter(producer_id=selected_producer)
 
+    if selected_organic:
+        products = products.filter(organic_status=selected_organic)
+
     filter_context = {
         "search_query": search_query,
         "min_price": min_price,
         "max_price": max_price,
         "selected_producer": selected_producer,
+        "selected_organic": selected_organic,
     }
 
     return products, filter_context

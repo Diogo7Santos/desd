@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Orders Overview{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'admin_dashboard/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-page">
+  <div class="admin-dashboard-container">
+    <header class="admin-dashboard-header">
+      <h1>Orders Overview</h1>
+      <p>Global order monitoring for business administrators</p>
+    </header>
+
+    <section class="dashboard-section">
+      <div style="margin-bottom: 12px;">
+        <a class="quick-action" href="{% url 'admin_dashboard:dashboard' %}" style="display:inline-block; max-width: 280px;">
+          <span class="quick-action-title">Back to Admin Portal</span>
+          <span class="quick-action-subtitle">Return to dashboard summary</span>
+        </a>
+      </div>
+
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Order Number</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Total Amount</th>
+                <th>Delivery Date</th>
+                <th>Created Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+              <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.customer.username }}</td>
+                <td>{{ order.get_status_display }}</td>
+                <td>£{{ order.total_amount }}</td>
+                <td>{{ order.delivery_date }}</td>
+                <td>{{ order.created_at }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="empty-cell">No orders found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

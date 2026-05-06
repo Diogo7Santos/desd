@@ -367,6 +367,69 @@ class AccountsTestCases(TestCase):
         final_logout = self.client.post(reverse("logout"), follow=True)
         self.assertRedirects(final_logout, reverse("login"))
 
+
+class RoleRedirectTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(
+            username="redirect-admin@example.com",
+            email="redirect-admin@example.com",
+            password="StrongPass123!",
+            role=User.Role.ADMIN,
+        )
+        self.producer_user = User.objects.create_user(
+            username="redirect-producer@example.com",
+            email="redirect-producer@example.com",
+            password="StrongPass123!",
+            role=User.Role.PRODUCER,
+        )
+        self.customer_user = User.objects.create_user(
+            username="redirect-customer@example.com",
+            email="redirect-customer@example.com",
+            password="StrongPass123!",
+            role=User.Role.CUSTOMER,
+        )
+
+    def test_admin_login_redirects_to_admin_portal(self):
+        response = self.client.post(
+            reverse("login"),
+            data={
+                "email": self.admin_user.email,
+                "password": "StrongPass123!",
+                "role": User.Role.ADMIN,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("admin_dashboard:dashboard"))
+
+    def test_producer_login_redirects_to_producer_area(self):
+        response = self.client.post(
+            reverse("login"),
+            data={
+                "email": self.producer_user.email,
+                "password": "StrongPass123!",
+                "role": User.Role.PRODUCER,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("catalog:producer_products"))
+
+    def test_customer_login_redirects_to_customer_marketplace(self):
+        response = self.client.post(
+            reverse("login"),
+            data={
+                "email": self.customer_user.email,
+                "password": "StrongPass123!",
+                "role": User.Role.CUSTOMER,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("catalog:product_list"))
+
+    def test_django_admin_route_still_resolves(self):
+        self.assertEqual(reverse("admin:index"), "/admin/")
+        response = self.client.get("/admin/")
+        self.assertIn(response.status_code, [200, 302])
+
 def test_tc017_register_community_group_account(self):
     response = self.client.post(
         reverse("register"),

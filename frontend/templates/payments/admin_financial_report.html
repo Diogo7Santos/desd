@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Network Financial Report{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'admin_dashboard/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-page">
+  <div class="admin-dashboard-container">
+    <header class="admin-dashboard-header">
+      <h1>Network Financial Report</h1>
+      <p>Admin-only financial reporting overview</p>
+    </header>
+
+    <section class="dashboard-section">
+      <h2>Summary</h2>
+      <div class="summary-grid">
+        <article class="summary-card">
+          <h3>Date Range</h3>
+          <p style="font-size: 18px;">{{ report.start_date }} to {{ report.end_date }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Gross</h3>
+          <p>£{{ report.totals.gross }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Commission</h3>
+          <p>£{{ report.totals.commission }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Payout</h3>
+          <p>£{{ report.totals.net }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Processed Payments</h3>
+          <p>{{ report.processed_payment_count }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Processed Orders</h3>
+          <p>{{ report.processed_order_count }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Report Rows</h2>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Transaction</th>
+                <th>Order Ref</th>
+                <th>Order Status</th>
+                <th>Producer Ref</th>
+                <th>Gross</th>
+                <th>Commission</th>
+                <th>Payout</th>
+                <th>Status</th>
+                <th>Paid At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in report.rows %}
+              <tr>
+                <td>{{ row.payment_id }}</td>
+                <td>{{ row.transaction_reference }}</td>
+                <td>{{ row.order_reference }}</td>
+                <td>{{ row.order_status }}</td>
+                <td>{{ row.producer_reference }}</td>
+                <td>£{{ row.gross_amount }}</td>
+                <td>£{{ row.commission_amount }}</td>
+                <td>£{{ row.net_amount }}</td>
+                <td>{{ row.status }}</td>
+                <td>{{ row.paid_at|default:"-" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="10" class="empty-cell">No report rows for selected filters.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -14,6 +14,18 @@ from payments.models import PaymentRecord
 from payments.services import create_checkout_session_for_order
 
 
+def _payment_status_for_order(order):
+    records = PaymentRecord.objects.filter(order_reference=order.order_number)
+    if not records.exists():
+        return "UNKNOWN"
+    statuses = set(records.values_list("status", flat=True))
+    if statuses == {PaymentRecord.Status.PAID}:
+        return PaymentRecord.Status.PAID
+    if PaymentRecord.Status.FAILED in statuses and PaymentRecord.Status.PAID not in statuses:
+        return PaymentRecord.Status.FAILED
+    return PaymentRecord.Status.PENDING
+
+
 @login_required
 def checkout(request):
     """
@@ -197,6 +209,7 @@ def order_confirmation(request, order_id):
     context = {
         'order': order,
         'items_by_producer': items_by_producer,
+        'payment_status': _payment_status_for_order(order),
     }
     
     return render(request, 'orders/order_confirmation.html', context)
@@ -212,9 +225,12 @@ def producer_dashboard(request):
         return redirect('catalog:product_list')
     
     # Get all orders that contain this producer's products
-    orders = Order.objects.filter(
-        items__producer=request.user
-    ).distinct().order_by('-created_at')
+    orders = (
+        Order.objects.filter(items__producer=request.user)
+        .exclude(status=Order.Status.PENDING_PAYMENT)
+        .distinct()
+        .order_by('-created_at')
+    )
     
     # For each order, get only this producer's items
     orders_data = []
@@ -226,6 +242,7 @@ def producer_dashboard(request):
             'order': order,
             'items': producer_items,
             'subtotal': producer_subtotal,
+            'payment_status': _payment_status_for_order(order),
         })
     
     context = {
@@ -279,10 +296,23 @@ def order_history(request):
     """
     TC-021: Customer order history.
     """
-    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    orders = (
+        Order.objects.filter(customer=request.user)
+        .exclude(status=Order.Status.PENDING_PAYMENT)
+        .order_by('-created_at')
+    )
     
+    orders_data = []
+    for order in orders:
+        orders_data.append(
+            {
+                "order": order,
+                "payment_status": _payment_status_for_order(order),
+            }
+        )
+
     context = {
-        'orders': orders,
+        'orders_data': orders_data,
     }
     
     return render(request, 'orders/order_history.html', context)
@@ -293,12 +323,17 @@ def order_detail(request, order_id):
     """
     TC-021: View specific order details.
     """
-    order = get_object_or_404(Order, id=order_id, customer=request.user)
+    order = get_object_or_404(
+        Order.objects.exclude(status=Order.Status.PENDING_PAYMENT),
+        id=order_id,
+        customer=request.user,
+    )
     items_by_producer = order.get_items_by_producer()
     
     context = {
         'order': order,
         'items_by_producer': items_by_producer,
+        'payment_status': _payment_status_for_order(order),
     }
     
     return render(request, 'orders/order_detail.html', context)
@@ -310,7 +345,11 @@ def reorder(request, order_id):
     """
     TC-021: Copy previous order items to cart.
     """
-    order = get_object_or_404(Order, id=order_id, customer=request.user)
+    order = get_object_or_404(
+        Order.objects.exclude(status=Order.Status.PENDING_PAYMENT),
+        id=order_id,
+        customer=request.user,
+    )
     
     # Get or create cart
     cart, created = Cart.objects.get_or_create(user=request.user)
