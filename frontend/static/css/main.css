@@ -32,11 +32,12 @@
     box-sizing: border-box;
 }
 
-html, body {
-    height: 100%;
+html {
+    min-height: 100%;
 }
 
 body {
+    min-height: 100%;
     background: var(--bg);
     color: var(--text);
     font-family: "Inter", sans-serif;
@@ -72,7 +73,6 @@ small {
 ========================= */
 
 a {
-    color: var(--primary);
     color: black;
     text-decoration: none;
     transition: 0.15s ease;
@@ -85,19 +85,94 @@ a:hover {
 
 /* =========================
    NAVBAR GLOBAL OVERRIDE
+   Keeps base_bugged.html aligned with base.html/catalog navbar.
 ========================= */
 
 .navbar {
-  background: white;
-  color: black;
+    display: block;
+    background: white;
+    color: black;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 14px 24px;
+}
+
+.nav-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-weight: 800;
+    font-size: 20px;
+    text-decoration: none;
+    color: black;
+    margin-left: 0;
 }
 
 .navbar a {
     color: black;
+    margin-left: 0;
 }
 
 .navbar a:hover {
     text-decoration: underline;
+}
+
+.nav-links a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+}
+
+.auth-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.auth-section form {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-label {
+    font-weight: 600;
+}
+
+.btn-outline {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid black;
+    text-decoration: none;
+    font-weight: 500;
+    color: black;
+    background: transparent;
+}
+
+.btn-outline:hover {
+    background: black;
+    color: white;
+}
+
+.auth-section button.btn-outline {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.15);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.auth-section button.btn-outline:hover {
+    background: black;
+    color: white;
 }
 
 /* =========================
@@ -204,5 +279,13 @@ table {
 @media (max-width: 600px) {
     body {
         font-size: 14px;
+    }
+
+    .nav-container {
+        gap: 12px;
+    }
+
+    .auth-section {
+        gap: 8px;
     }
 }

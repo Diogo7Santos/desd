@@ -6,19 +6,6 @@
    - Responsive rules
 ========================= */
 
-/* ---------- Base layout helpers ---------- */
-
-html, body {
-    height: 100%;
-}
-
-body {
-    margin: 0;
-    background: #f5f5f5;
-    font-family: "Inter", sans-serif;
-    color: #222;
-}
-
 /* ---------- Container ---------- */
 
 .container {
@@ -30,7 +17,6 @@ body {
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-/* Wider container if you ever need it */
 .container-wide {
     max-width: 1300px;
     margin: 30px auto;
@@ -50,11 +36,12 @@ body {
     margin: 0 0 8px 0;
     font-size: 22px;
     font-weight: 700;
+    color: #111;
 }
 
 .section-subtitle {
     margin: 0;
-    color: #666;
+    color: rgba(0,0,0,0.6);
     font-size: 14px;
     line-height: 1.5;
 }
@@ -69,11 +56,12 @@ body {
     margin: 0 0 6px 0;
     font-size: 28px;
     font-weight: 800;
+    color: #111;
 }
 
 .page-desc {
     margin: 0;
-    color: #666;
+    color: rgba(0,0,0,0.6);
     font-size: 14px;
     line-height: 1.6;
 }
@@ -146,16 +134,28 @@ body {
     margin: 18px 0;
 }
 
-/* ---------- Sticky footer layout (optional) ---------- */
+/* ---------- Sticky footer helpers ---------- */
 
-.page {
+html,
+body {
+    min-height: 100%;
+}
+
+body.page {
     min-height: 100vh;
+    height: auto;
     display: flex;
     flex-direction: column;
 }
 
-.page-content {
-    flex: 1;
+body.page > main.main-content {
+    flex: 1 0 auto;
+}
+
+body.page > footer.footer {
+    flex: 0 0 auto;
+    margin-top: auto;
+    position: static;
 }
 
 /* ---------- Responsive ---------- */
