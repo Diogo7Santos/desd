@@ -435,4 +435,307 @@
       "updated_at": "2026-02-27T19:50:00Z"
     }
   }
+,
+{
+  "model": "accounts.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "riverdaledairy",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-27T19:55:00Z",
+    "email": "dairy@foodnet.local",
+    "role": "PRODUCER",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "sunnyorchard",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-27T19:56:00Z",
+    "email": "orchard@foodnet.local",
+    "role": "PRODUCER",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "harvesthill",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-27T19:57:00Z",
+    "email": "harvest@foodnet.local",
+    "role": "PRODUCER",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 8,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "severnvalley",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-27T19:58:00Z",
+    "email": "severn@foodnet.local",
+    "role": "PRODUCER",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 3,
+  "fields": {
+    "user": 5,
+    "business_name": "Riverdale Dairy",
+    "postcode": "BS3 3CC"
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 4,
+  "fields": {
+    "user": 6,
+    "business_name": "Sunny Orchard",
+    "postcode": "BS4 4DD"
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 5,
+  "fields": {
+    "user": 7,
+    "business_name": "Harvest Hill Organics",
+    "postcode": "BS5 5EE"
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 6,
+  "fields": {
+    "user": 8,
+    "business_name": "Severn Valley Meats",
+    "postcode": "BS6 6FF"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 19,
+  "fields": {
+    "producer": 5,
+    "name": "Greek Yogurt",
+    "category": "DAIRY_EGGS",
+    "description": "Thick creamy local Greek yogurt",
+    "price": "2.80",
+    "unit": "tub",
+    "availability": "AVAILABLE",
+    "stock_quantity": 25,
+    "allergens": "milk",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/greekyogurt.png",
+    "created_at": "2026-02-27T19:55:00Z",
+    "updated_at": "2026-02-27T19:55:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 20,
+  "fields": {
+    "producer": 5,
+    "name": "Salted Butter",
+    "category": "DAIRY_EGGS",
+    "description": "Local farmhouse salted butter",
+    "price": "2.60",
+    "unit": "block",
+    "availability": "AVAILABLE",
+    "stock_quantity": 18,
+    "allergens": "milk",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/butter.png",
+    "created_at": "2026-02-27T19:55:00Z",
+    "updated_at": "2026-02-27T19:55:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 21,
+  "fields": {
+    "producer": 5,
+    "name": "Soft Cheese",
+    "category": "DAIRY_EGGS",
+    "description": "Creamy soft cheese from local dairy milk",
+    "price": "3.40",
+    "unit": "tub",
+    "availability": "AVAILABLE",
+    "stock_quantity": 16,
+    "allergens": "milk",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/softcheese.png",
+    "created_at": "2026-02-27T19:55:00Z",
+    "updated_at": "2026-02-27T19:55:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 22,
+  "fields": {
+    "producer": 6,
+    "name": "Fresh Apples",
+    "category": "SEASONAL_SPECIALTIES",
+    "description": "Crisp seasonal apples from the orchard",
+    "price": "2.00",
+    "unit": "kg",
+    "availability": "AVAILABLE",
+    "stock_quantity": 35,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/apples.png",
+    "created_at": "2026-02-27T19:56:00Z",
+    "updated_at": "2026-02-27T19:56:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 23,
+  "fields": {
+    "producer": 6,
+    "name": "Strawberry Jam",
+    "category": "PRESERVES",
+    "description": "Homemade strawberry jam",
+    "price": "3.50",
+    "unit": "jar",
+    "availability": "AVAILABLE",
+    "stock_quantity": 20,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/strawberryjam.png",
+    "created_at": "2026-02-27T19:56:00Z",
+    "updated_at": "2026-02-27T19:56:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 24,
+  "fields": {
+    "producer": 7,
+    "name": "Kale",
+    "category": "VEGETABLES",
+    "description": "Fresh organic kale bunch",
+    "price": "1.70",
+    "unit": "bunch",
+    "availability": "AVAILABLE",
+    "stock_quantity": 30,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/kale.png",
+    "created_at": "2026-02-27T19:57:00Z",
+    "updated_at": "2026-02-27T19:57:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 25,
+  "fields": {
+    "producer": 7,
+    "name": "Fresh Basil",
+    "category": "VEGETABLES",
+    "description": "Fresh organic basil herbs",
+    "price": "1.30",
+    "unit": "bunch",
+    "availability": "AVAILABLE",
+    "stock_quantity": 22,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/basil.png",
+    "created_at": "2026-02-27T19:57:00Z",
+    "updated_at": "2026-02-27T19:57:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 26,
+  "fields": {
+    "producer": 7,
+    "name": "Butternut Squash",
+    "category": "SEASONAL_SPECIALTIES",
+    "description": "Seasonal organic butternut squash",
+    "price": "2.60",
+    "unit": "each",
+    "availability": "AVAILABLE",
+    "stock_quantity": 18,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/squash.png",
+    "created_at": "2026-02-27T19:57:00Z",
+    "updated_at": "2026-02-27T19:57:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 27,
+  "fields": {
+    "producer": 8,
+    "name": "Free Range Chicken",
+    "category": "OTHER",
+    "description": "Locally sourced free range chicken",
+    "price": "7.50",
+    "unit": "kg",
+    "availability": "AVAILABLE",
+    "stock_quantity": 12,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/chicken.png",
+    "created_at": "2026-02-27T19:58:00Z",
+    "updated_at": "2026-02-27T19:58:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 28,
+  "fields": {
+    "producer": 8,
+    "name": "Pork Sausages",
+    "category": "OTHER",
+    "description": "Traditional local pork sausages",
+    "price": "4.80",
+    "unit": "pack",
+    "availability": "AVAILABLE",
+    "stock_quantity": 20,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/sausages.png",
+    "created_at": "2026-02-27T19:58:00Z",
+    "updated_at": "2026-02-27T19:58:00Z"
+  }
+}
 ]
