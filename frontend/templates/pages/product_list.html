@@ -167,6 +167,7 @@
                   {{ product.name }}
                 </div>
 
+<<<<<<< HEAD
                 <div class="product-price">
                   £{{ product.price }}
                 </div>
@@ -198,6 +199,26 @@
                 <small>
                   Producer: {{ product.producer.username }}
                 </small>
+=======
+                {% if request.user.is_authenticated and request.user.role == "CUSTOMER" %}
+                  <div class="food-miles-row">
+                    {% if product.food_miles %}
+                      <span class="food-miles-pill {{ product.food_miles.impact_class }}">
+                        Food Miles: {{ product.food_miles.miles_display }}
+                      </span>
+                      <span class="food-miles-note">
+                        {{ product.food_miles.local_radius_message }}
+                      </span>
+                    {% else %}
+                      <span class="food-miles-pill food-miles-unavailable">
+                        Food miles unavailable
+                      </span>
+                    {% endif %}
+                  </div>
+                {% endif %}
+
+                <small>Producer: {{ product.producer.username }}</small>
+>>>>>>> 61745ab (update food miles and review and feedback)
               </div>
 
             </a>

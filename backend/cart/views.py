@@ -1,9 +1,26 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+
+from catalog.food_miles import food_miles_for_product, summarize_food_miles
 from catalog.models import Product
+
 from .models import Cart, CartItem
+
+
+def _customer_postcode_for_user(user):
+    if getattr(user, "role", None) != "CUSTOMER":
+        return ""
+
+    try:
+        customer_profile = user.customer_profile
+        address = customer_profile.address
+    except ObjectDoesNotExist:
+        return ""
+
+    return getattr(address, "postcode", "")
 
 
 @login_required
@@ -85,12 +102,27 @@ def view_cart(request):
         items_by_producer = {}
         total_price = 0
         total_items = 0
-    
+
+    customer_postcode = _customer_postcode_for_user(request.user)
+    food_miles_results = []
+    line_item_count = sum(len(items) for items in items_by_producer.values())
+
+    for producer_items in items_by_producer.values():
+        for item in producer_items:
+            item.food_miles = food_miles_for_product(item.product, customer_postcode)
+            food_miles_results.append(item.food_miles)
+
+    food_miles_summary = summarize_food_miles(
+        food_miles_results,
+        expected_count=line_item_count,
+    )
+
     context = {
         'items_by_producer': items_by_producer,
         'total_price': total_price,
         'total_items': total_items,
         'producer_count': len(items_by_producer),
+        'food_miles_summary': food_miles_summary,
     }
     
     return render(request, 'cart/cart.html', context)

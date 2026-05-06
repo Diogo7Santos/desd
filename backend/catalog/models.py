@@ -222,3 +222,79 @@ class Product(models.Model):
         # Ensure model validation runs even if objects are created outside forms/admin.
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class ProductReview(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="product_reviews",
+    )
+    order_item = models.ForeignKey(
+        "orders.OrderItem",
+        on_delete=models.CASCADE,
+        related_name="product_reviews",
+    )
+    rating = models.PositiveSmallIntegerField()
+    title = models.CharField(max_length=120)
+    review_text = models.TextField()
+    anonymous = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=True)
+    producer_response = models.TextField(blank=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["product", "-created_at"]),
+            models.Index(fields=["customer", "product"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(rating__gte=1, rating__lte=5),
+                name="catalog_review_rating_between_1_and_5",
+            ),
+            models.UniqueConstraint(
+                fields=["product", "customer"],
+                name="catalog_unique_review_per_product_customer",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.product.name} review by {self.customer.username}"
+
+    @property
+    def customer_display_name(self) -> str:
+        if self.anonymous:
+            return "Anonymous"
+        return self.customer.get_full_name() or self.customer.username
+
+    @property
+    def rating_stars(self) -> str:
+        return ("\u2605" * self.rating) + ("\u2606" * (5 - self.rating))
+
+    def clean(self) -> None:
+        super().clean()
+
+        if self.order_item_id and self.product_id and self.order_item.product_id != self.product_id:
+            raise ValidationError({"order_item": "Review must match the purchased product."})
+
+        if self.order_item_id and self.customer_id:
+            if self.order_item.order.customer_id != self.customer_id:
+                raise ValidationError({"order_item": "You can only review your own delivered purchases."})
+
+            order_delivered = self.order_item.order.status == "DELIVERED"
+            item_delivered = self.order_item.status == "DELIVERED"
+            if not order_delivered and not item_delivered:
+                raise ValidationError({"order_item": "Reviews can only be submitted after delivery."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

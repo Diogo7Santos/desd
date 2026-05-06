@@ -178,6 +178,41 @@
     padding-top: 14px;
 }
 
+.order-review-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.order-review-link:hover,
+.order-review-link:focus,
+.order-review-link:visited {
+    color: #fff;
+    text-decoration: none;
+}
+
+.order-review-link-muted {
+    background: #e8f5e9;
+    color: #256029;
+}
+
+.order-review-link-muted:hover,
+.order-review-link-muted:focus,
+.order-review-link-muted:visited {
+    color: #256029;
+}
+
+.order-review-pending {
+    color: #666;
+    font-size: 0.82rem;
+}
+
 .text-right {
     text-align: right !important;
 }

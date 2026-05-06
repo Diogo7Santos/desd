@@ -52,8 +52,26 @@
                         <h6 class="mb-3"><i class="bi bi-person-circle"></i> Customer Information</h6>
                         <div class="info-row">
                             <i class="bi bi-person info-icon"></i>
-                            <strong>{{ order_data.order.customer.username }}</strong>
+                            <strong>{{ order_data.customer_summary.display_name }}</strong>
                         </div>
+                        {% if order_data.customer_summary.is_business_customer %}
+                        <div class="info-row">
+                            <i class="bi bi-building info-icon"></i>
+                            <span>{{ order_data.customer_summary.customer_type_display }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order_data.customer_summary.contact_person %}
+                        <div class="info-row">
+                            <i class="bi bi-person-badge info-icon"></i>
+                            <span>Contact: {{ order_data.customer_summary.contact_person }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order_data.customer_summary.email %}
+                        <div class="info-row">
+                            <i class="bi bi-envelope info-icon"></i>
+                            <span>{{ order_data.customer_summary.email }}</span>
+                        </div>
+                        {% endif %}
                         <div class="info-row">
                             <i class="bi bi-calendar-check info-icon"></i>
                             <span>Delivery: {{ order_data.order.delivery_date|date:"F d, Y" }}</span>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Review {{ product.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/review_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="review-form-container">
+    <div class="review-form-card">
+        <div class="review-form-header">
+            <h1>Review {{ product.name }}</h1>
+            <p>Share your feedback about this delivered purchase to help other customers choose confidently.</p>
+        </div>
+
+        <div class="review-form-context">
+            <div>
+                <span class="review-context-label">Order</span>
+                <strong>{{ order.order_number }}</strong>
+            </div>
+            <div>
+                <span class="review-context-label">Delivered Item</span>
+                <strong>{{ order_item.product_name }}</strong>
+            </div>
+        </div>
+
+        <form method="post" class="review-form-body">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="review-form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="review-form-field">
+                <label for="{{ form.rating.id_for_label }}">Star Rating</label>
+                {{ form.rating }}
+                {% if form.rating.errors %}
+                    <div class="review-field-error">{{ form.rating.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="review-form-field">
+                <label for="{{ form.title.id_for_label }}">Review Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="review-field-error">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="review-form-field">
+                <label for="{{ form.review_text.id_for_label }}">Your Review</label>
+                {{ form.review_text }}
+                {% if form.review_text.errors %}
+                    <div class="review-field-error">{{ form.review_text.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="review-form-check">
+                {{ form.anonymous }}
+                <label for="{{ form.anonymous.id_for_label }}">Post this review anonymously</label>
+            </div>
+            {% if form.anonymous.errors %}
+                <div class="review-field-error">{{ form.anonymous.errors }}</div>
+            {% endif %}
+
+            <div class="review-form-actions">
+                <button type="submit" class="review-submit-btn">Submit Review</button>
+                <a href="{% url 'orders:order_detail' order.id %}" class="review-cancel-link">Back to Order</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

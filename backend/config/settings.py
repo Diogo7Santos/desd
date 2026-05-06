@@ -144,6 +144,16 @@ TEMPLATES[0]["DIRS"] = [
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
+POSTCODES_IO_ENABLED = os.environ.get("POSTCODES_IO_ENABLED", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+POSTCODES_IO_BASE_URL = os.environ.get("POSTCODES_IO_BASE_URL", "https://api.postcodes.io")
+POSTCODES_IO_TIMEOUT = int(os.environ.get("POSTCODES_IO_TIMEOUT", "3"))
+POSTCODES_IO_CACHE_TIMEOUT = int(os.environ.get("POSTCODES_IO_CACHE_TIMEOUT", "86400"))
+
 LOGIN_URL = "login"
 
 # Cookie settings for security

@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from .models import Address, CustomerProfile, ProducerProfile
 from . import views as account_views
+from .web_forms import POSTCODE_ERROR_MESSAGE
 
 User = get_user_model()
 
@@ -486,10 +487,124 @@ def test_tc018_register_restaurant_account_requires_business_fields(self):
     self.assertEqual(response.status_code, 200)
     self.assertContains(response, "This field is required for restaurant accounts.")
 
-def test_tc021_account_page_available_to_logged_in_customer(self):
-    user = self.create_customer_user(email="history@example.com")
-    self.client.login(username=user.email, password="StrongPass123!")
+    def test_tc021_account_page_available_to_logged_in_customer(self):
+        user = self.create_customer_user(email="history@example.com")
+        self.client.login(username=user.email, password="StrongPass123!")
 
-    response = self.client.get(reverse("account"))
-    self.assertEqual(response.status_code, 200)
-    self.assertContains(response, "My Account")
+        response = self.client.get(reverse("account"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "My Account")
+
+    def test_producer_can_update_account_details(self):
+        user = self.create_producer_user(email="producer-update@example.com")
+        self.client.login(username=user.email, password="StrongPass123!")
+
+        response = self.client.post(
+            reverse("account"),
+            data={
+                "user-email": "updated-producer@example.com",
+                "user-phone": "01179998877",
+                "producer-business_name": "Updated Farm",
+                "producer-contact_name": "Updated Producer",
+                "producer-business_address": "99 Farm Lane, Bristol",
+                "producer-postcode": "BS1 6AA",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Account details updated successfully.")
+
+        user.refresh_from_db()
+        user.producer_profile.refresh_from_db()
+        self.assertEqual(user.email, "updated-producer@example.com")
+        self.assertEqual(user.username, "updated-producer@example.com")
+        self.assertEqual(user.phone, "01179998877")
+        self.assertEqual(user.producer_profile.business_name, "Updated Farm")
+        self.assertEqual(user.producer_profile.contact_name, "Updated Producer")
+        self.assertEqual(user.producer_profile.business_address, "99 Farm Lane, Bristol")
+        self.assertEqual(user.producer_profile.postcode, "BS1 6AA")
+
+
+class PostcodeValidationTests(TestCase):
+    def create_producer_user(self, email="postcode-producer@example.com", password="StrongPass123!"):
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+            role=User.Role.PRODUCER,
+        )
+        ProducerProfile.objects.create(
+            user=user,
+            business_name="Demo Farm",
+            contact_name="Producer User",
+            business_address="1 Farm Lane, Bristol",
+            postcode="BS1 4DJ",
+        )
+        return user
+
+    def test_register_rejects_invalid_producer_postcode(self):
+        response = self.client.post(
+            reverse("register"),
+            data={
+                "email": "invalid-producer@example.com",
+                "phone": "01179123456",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+                "role": User.Role.PRODUCER,
+                "business_name": "Bristol Valley Farm",
+                "contact_name": "Jane Smith",
+                "business_address": "45 Valley Road, Bristol",
+                "producer_postcode": "usefhguihf",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, POSTCODE_ERROR_MESSAGE)
+        self.assertFalse(User.objects.filter(email="invalid-producer@example.com").exists())
+
+    def test_register_normalizes_customer_postcode_format(self):
+        response = self.client.post(
+            reverse("register"),
+            data={
+                "email": "normalized-customer@example.com",
+                "phone": "07700900123",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+                "role": User.Role.CUSTOMER,
+                "full_name": "Robert Johnson",
+                "customer_type_id": str(CustomerProfile.CustomerType.INDIVIDUAL),
+                "line_1": "45 Park Street",
+                "line_2": "",
+                "city": "Bristol",
+                "customer_postcode": "bs13tb",
+                "accept_terms": "on",
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("customer_home"))
+        user = User.objects.get(email="normalized-customer@example.com")
+        self.assertEqual(user.customer_profile.address.postcode, "BS1 3TB")
+
+    def test_account_update_rejects_invalid_producer_postcode(self):
+        user = self.create_producer_user()
+        self.client.login(username=user.email, password="StrongPass123!")
+
+        response = self.client.post(
+            reverse("account"),
+            data={
+                "user-email": user.email,
+                "user-phone": "01179998877",
+                "producer-business_name": "Updated Farm",
+                "producer-contact_name": "Updated Producer",
+                "producer-business_address": "99 Farm Lane, Bristol",
+                "producer-postcode": "7yr98yfuih",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, POSTCODE_ERROR_MESSAGE)
+
+        user.producer_profile.refresh_from_db()
+        self.assertEqual(user.producer_profile.postcode, "BS1 4DJ")

@@ -68,6 +68,18 @@
                     <span class="value">{{ order.delivery_address }}<br>{{ order.delivery_postcode }}</span>
                 </div>
 
+                {% if customer_summary.is_business_customer %}
+                <div class="detail-row">
+                    <strong>Ordering Organisation:</strong>
+                    <span class="value">
+                        {{ customer_summary.organisation_name|default:customer_summary.display_name }}
+                        {% if customer_summary.contact_person %}
+                        <br>Contact: {{ customer_summary.contact_person }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
                 {% if order.delivery_instructions %}
                 <div class="detail-row">
                     <strong>Delivery Instructions:</strong>
@@ -112,6 +124,26 @@
             </div>
             {% endfor %}
 
+            {% if producer_contacts %}
+            <div class="order-details-card">
+                <h5><i class="bi bi-telephone"></i> Producer Coordination Contacts</h5>
+                {% for contact in producer_contacts %}
+                <div class="detail-row">
+                    <strong>{{ contact.business_name }}</strong>
+                    <span class="value">
+                        {{ contact.contact_name }}
+                        {% if contact.email %}
+                        <br>{{ contact.email }}
+                        {% endif %}
+                        {% if contact.postcode %}
+                        <br>{{ contact.postcode }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="order-total-card">
                 <div class="total-display">
                     <h4>Order Total:</h4>
@@ -123,6 +155,11 @@
                 <a href="{% url 'orders:order_history' %}" class="btn-view-history">
                     <i class="bi bi-list"></i> View Order History
                 </a>
+                {% if show_recurring_orders_link %}
+                <a href="{% url 'orders:recurring_orders' %}" class="btn-view-history">
+                    <i class="bi bi-arrow-repeat"></i> Manage Recurring Orders
+                </a>
+                {% endif %}
                 <a href="{% url 'catalog:product_list' %}" class="btn-continue-shopping">
                     <i class="bi bi-shop"></i> Continue Shopping
                 </a>

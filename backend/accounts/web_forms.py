@@ -4,6 +4,9 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from .models import ProducerProfile, CustomerProfile, Address
+from .postcodes import (
+    clean_uk_postcode,
+)
 
 User = get_user_model()
 
@@ -107,6 +110,12 @@ class RegisterForm(forms.Form):
         widget=forms.Textarea(attrs={"class": "form-input", "rows": 3})
     )
 
+    def clean_producer_postcode(self):
+        return clean_uk_postcode(self.cleaned_data.get("producer_postcode", ""))
+
+    def clean_customer_postcode(self):
+        return clean_uk_postcode(self.cleaned_data.get("customer_postcode", ""))
+
     def clean(self):
         cleaned = super().clean()
 
@@ -188,6 +197,9 @@ class ProducerAccountForm(forms.ModelForm):
             "postcode": forms.TextInput(attrs={"class": "form-input"}),
         }
 
+    def clean_postcode(self):
+        return clean_uk_postcode(self.cleaned_data.get("postcode", ""))
+
 
 class CustomerAccountForm(forms.ModelForm):
     class Meta:
@@ -219,3 +231,6 @@ class AddressForm(forms.ModelForm):
             "city": forms.TextInput(attrs={"class": "form-input"}),
             "postcode": forms.TextInput(attrs={"class": "form-input"}),
         }
+
+    def clean_postcode(self):
+        return clean_uk_postcode(self.cleaned_data.get("postcode", ""))

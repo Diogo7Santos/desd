@@ -13,7 +13,6 @@
 
   <div class="detail-card">
 
-    <!-- Image Section -->
     <div class="detail-image">
       {% if product.image %}
         <img src="{{ product.image.url }}" alt="{{ product.name }}">
@@ -24,13 +23,12 @@
       {% endif %}
     </div>
 
-    <!-- Info Section -->
     <div class="detail-info">
 
       <h1 class="detail-title">{{ product.name }}</h1>
 
       <div class="detail-price">
-        £{{ product.price }} <span class="unit">/ {{ product.unit }}</span>
+        &pound;{{ product.price }} <span class="unit">/ {{ product.unit }}</span>
       </div>
 
       <div class="detail-badges">
@@ -44,6 +42,121 @@
         <h3>Description</h3>
         <p>{{ product.description|default:"No description provided." }}</p>
       </div>
+
+      <div class="food-miles-card">
+        <h3>Food Miles</h3>
+        {% if user.is_authenticated and user.role == 'CUSTOMER' %}
+          {% if food_miles %}
+            <div class="food-miles-value">{{ food_miles.miles_display }} miles</div>
+            <div class="food-miles-status-row">
+              <span class="food-miles-note">
+                {{ food_miles.local_radius_message }}
+              </span>
+            </div>
+          {% else %}
+            <p class="food-miles-copy">
+              Food miles are unavailable until both customer and producer postcodes are set.
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="food-miles-copy">
+            Log in as a customer to see the estimated food miles for this product.
+          </p>
+        {% endif %}
+      </div>
+
+      <section class="reviews-card" id="reviews">
+        <div class="reviews-header-row">
+          <div>
+            <h3>Customer Reviews</h3>
+            {% if review_count %}
+              <div class="reviews-summary">
+                <span class="reviews-average">{{ average_rating_display }}/5</span>
+                <span class="reviews-count">{{ review_count }} review{{ review_count|pluralize }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          {% if can_write_review and eligible_review_order_item %}
+            <a
+              href="{% url 'catalog:create_review' product_id=product.id order_item_id=eligible_review_order_item.id %}"
+              class="review-action-link"
+            >
+              Write Review
+            </a>
+          {% endif %}
+        </div>
+
+        {% if user.is_authenticated and user.role == 'CUSTOMER' and customer_review %}
+          <p class="review-customer-note">
+            You already reviewed this product.
+            <a href="#review-{{ customer_review.id }}">Jump to your review</a>
+          </p>
+        {% elif user.is_authenticated and user.role == 'CUSTOMER' and not can_write_review %}
+          <p class="review-customer-note">
+            You can review this product after a delivered purchase.
+          </p>
+        {% endif %}
+
+        {% if product_reviews %}
+          <div class="review-list">
+            {% for review in product_reviews %}
+              <article class="review-card" id="review-{{ review.id }}">
+                <div class="review-card-header">
+                  <div>
+                    <div class="review-stars">{{ review.rating_stars }}</div>
+                    <h4 class="review-title">{{ review.title }}</h4>
+                  </div>
+
+                  <div class="review-meta">
+                    <span class="review-badge">Verified Purchase</span>
+                    <span>{{ review.customer_display_name }}</span>
+                    <span>{{ review.created_at|date:"M d, Y" }}</span>
+                  </div>
+                </div>
+
+                <p class="review-text">{{ review.review_text }}</p>
+
+                {% if review.producer_response %}
+                  <div class="review-response">
+                    <strong>Producer Response</strong>
+                    <p>{{ review.producer_response }}</p>
+                    {% if review.responded_at %}
+                      <span>{{ review.responded_at|date:"M d, Y" }}</span>
+                    {% endif %}
+                  </div>
+                {% endif %}
+
+                {% if can_respond_to_reviews %}
+                  <form
+                    method="post"
+                    action="{% url 'catalog:respond_review' review_id=review.id %}"
+                    class="review-response-form"
+                  >
+                    {% csrf_token %}
+                    <label for="producer_response_{{ review.id }}" class="review-response-label">
+                      Producer response
+                    </label>
+                    <textarea
+                      id="producer_response_{{ review.id }}"
+                      name="producer_response"
+                      rows="3"
+                      class="review-response-input"
+                    >{{ review.producer_response }}</textarea>
+                    <button type="submit" class="review-response-btn">
+                      {% if review.producer_response %}Update Response{% else %}Add Response{% endif %}
+                    </button>
+                  </form>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="review-empty">
+            No reviews yet. The first delivered customer can add one.
+          </p>
+        {% endif %}
+      </section>
 
       <div class="detail-meta">
         <p><strong>Producer:</strong> {{ product.producer.username }}</p>
@@ -91,7 +204,7 @@
             <strong>Please <a href="{% url 'login' %}">login</a> as a customer to purchase this product.</strong>
           </div>
         {% endif %}
-        
+
         <a href="{% url 'catalog:product_list' %}" class="btn mt-2">
           Back to Marketplace
         </a>
