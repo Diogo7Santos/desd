@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Portal{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'admin_dashboard/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-page">
+  <div class="admin-dashboard-container">
+    <header class="admin-dashboard-header">
+      <h1>Admin Portal</h1>
+      <p>Business operations dashboard</p>
+    </header>
+
+    <section class="dashboard-section">
+      <h2>Summary</h2>
+      <div class="summary-grid">
+        <article class="summary-card">
+          <h3>Total Users</h3>
+          <p>{{ total_users }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Producers</h3>
+          <p>{{ total_producers }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Customers</h3>
+          <p>{{ total_customers }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Orders</h3>
+          <p>{{ total_orders }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Payment Value</h3>
+          <p>£{{ total_payment_value }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Total Commission</h3>
+          <p>£{{ total_commission }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Pending Payments</h3>
+          <p>{{ pending_payments }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Failed Payments</h3>
+          <p>{{ failed_payments }}</p>
+        </article>
+        <article class="summary-card">
+          <h3>Settlement Count</h3>
+          <p>{{ settlement_count }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Quick Actions</h2>
+      <div class="quick-actions-grid">
+        <a class="quick-action" href="{% url 'admin-financial-report' %}">
+          <span class="quick-action-title">Financial Reports</span>
+          <span class="quick-action-subtitle">View detailed network reporting</span>
+        </a>
+        <a class="quick-action" href="{% url 'admin-financial-report-csv' %}">
+          <span class="quick-action-title">Download Financial CSV</span>
+          <span class="quick-action-subtitle">Export report for offline analysis</span>
+        </a>
+        <a class="quick-action" href="{% url 'payments-records-page' %}">
+          <span class="quick-action-title">Payment Records</span>
+          <span class="quick-action-subtitle">Review latest transaction records</span>
+        </a>
+        <a class="quick-action" href="{% url 'payments-settlements-page' %}">
+          <span class="quick-action-title">Settlements</span>
+          <span class="quick-action-subtitle">Track settlement batches and status</span>
+        </a>
+        <a class="quick-action" href="{% url 'orders:order_history' %}">
+          <span class="quick-action-title">Orders</span>
+          <span class="quick-action-subtitle">Open order list and status history</span>
+        </a>
+        <a class="quick-action" href="{% url 'admin:index' %}">
+          <span class="quick-action-title">Django Admin</span>
+          <span class="quick-action-subtitle">Developer and maintenance tools</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Recent Orders</h2>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+              <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.customer.username }}</td>
+                <td>{{ order.get_status_display }}</td>
+                <td>{{ order.created_at }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="empty-cell">No recent orders.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Recent Payment Records</h2>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Transaction</th>
+                <th>Order Ref</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in recent_payment_records %}
+              <tr>
+                <td>{{ record.transaction_reference }}</td>
+                <td>{{ record.order_reference }}</td>
+                <td>{{ record.status }}</td>
+                <td>{{ record.created_at }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="empty-cell">No recent payment records.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h2>Recent Settlements</h2>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Producer Ref</th>
+                <th>Week</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for settlement in recent_settlement_batches %}
+              <tr>
+                <td>{{ settlement.producer_reference }}</td>
+                <td>{{ settlement.week_start }} to {{ settlement.week_end }}</td>
+                <td>{{ settlement.status }}</td>
+                <td>{{ settlement.created_at }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="empty-cell">No recent settlements.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

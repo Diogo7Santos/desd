@@ -34,7 +34,7 @@ def _has_role(user, role: str) -> bool:
 
 def _redirect_by_user_role(user):
     if _has_role(user, User.Role.ADMIN):
-        return redirect("admin_home")
+        return redirect("admin_dashboard:dashboard")
     if _has_role(user, User.Role.PRODUCER):
         return redirect("catalog:producer_products")
     return redirect("catalog:product_list")
@@ -249,7 +249,7 @@ def producer_home(request):
 def admin_home(request):
     if not _has_role(request.user, User.Role.ADMIN):
         return HttpResponseForbidden("Forbidden: admin only.")
-    return render(request, admin.site.urls)  # This will render the default Django admin dashboard
+    return redirect("admin_dashboard:dashboard")  # This will render the default Django admin dashboard
 
 @login_required
 def account_page(request):

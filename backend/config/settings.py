@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "orders",
     "payments",
     "community",
+    "admin_dashboard",
 ]
 
 MIDDLEWARE = [
