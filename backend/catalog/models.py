@@ -13,9 +13,10 @@ class Product(models.Model):
     Catalog product listing.
 
     Designed to support:
-    - TC-003: Producer can create product with required fields (category, price, stock, allergens, harvest date, availability)
+    - TC-003: Producer can create product with required fields
     - TC-004: Customer can browse by category and only see Available/In Season products
-    - TC-005: Customer can search by product name/description/producer name (handled in views)
+    - TC-005: Customer can search by product name/description/producer name
+    - TC-014: Customer can filter products by organic certification
     """
 
     class Category(models.TextChoices):
@@ -31,9 +32,12 @@ class Product(models.Model):
         OUT_OF_SEASON = "OUT_OF_SEASON", "Out of Season"
         UNAVAILABLE = "UNAVAILABLE", "Unavailable"
 
+    # NEW: Organic certification support (TC-014)
+    class OrganicStatus(models.TextChoices):
+        CERTIFIED = "CERTIFIED", "Certified Organic"
+        NON_CERTIFIED = "NON_CERTIFIED", "Not Certified Organic"
+
     # --- Ownership ---
-    # We keep this generic so it works whether you use Django's default User
-    # or a custom user model in accounts.
     producer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -41,9 +45,22 @@ class Product(models.Model):
         help_text="The producer (seller) who owns this listing.",
     )
 
-    # --- Core product fields (TC-003/004/005) ---
+    # --- Core product fields ---
     name = models.CharField(max_length=120)
-    category = models.CharField(max_length=32, choices=Category.choices)
+
+    category = models.CharField(
+        max_length=32,
+        choices=Category.choices
+    )
+
+    # NEW FIELD
+    organic_status = models.CharField(
+        max_length=20,
+        choices=OrganicStatus.choices,
+        default=OrganicStatus.NON_CERTIFIED,
+        help_text="Organic certification status for filtering and display.",
+    )
+
     description = models.TextField()
 
     price = models.DecimalField(
@@ -51,6 +68,7 @@ class Product(models.Model):
         decimal_places=2,
         help_text="Unit price in GBP (or your site currency).",
     )
+
     unit = models.CharField(
         max_length=40,
         help_text="e.g., 'kg', 'Dozen', 'Jar', 'Loaf'",
@@ -81,8 +99,6 @@ class Product(models.Model):
         help_text="Harvest/collection date (if applicable).",
     )
 
-    # Optional image upload (requires Pillow installed).
-    # If your project doesn't want images yet, you can remove this field.
     image = models.ImageField(
         upload_to="catalog/products/",
         null=True,
@@ -98,59 +114,75 @@ class Product(models.Model):
         indexes = [
             models.Index(fields=["category", "availability"]),
             models.Index(fields=["name"]),
+            models.Index(fields=["organic_status"]),  # NEW INDEX
         ]
 
     def __str__(self) -> str:
         return f"{self.name} (£{self.price})"
 
-    # --------- Convenience helpers (used by views/templates) ---------
+    # --------- Convenience helpers ---------
 
     @property
     def is_available(self) -> bool:
         """
-        TC-004 requires: Only products marked as Available/In Season are displayed.
+        TC-004 requires:
+        Only products marked as Available/In Season are displayed.
         """
         return self.availability == self.Availability.AVAILABLE
 
     @property
+    def is_certified_organic(self) -> bool:
+        """
+        TC-014 helper for templates/views.
+        """
+        return self.organic_status == self.OrganicStatus.CERTIFIED
+
+    @property
     def allergen_display(self) -> str:
         """
-        TC-015 is separate, but for TC-003 we store allergens;
-        this helper makes it easy to display "No common allergens" when empty.
+        Makes it easy to display
+        "No common allergens" when empty.
         """
         cleaned = (self.allergens or "").strip()
         return cleaned if cleaned else "No common allergens"
 
-    # --------- Model validation (helps avoid demo/test case failures) ---------
+    # --------- Model validation ---------
 
     def clean(self) -> None:
         """
         Basic business rules to prevent bad data getting into the DB.
-        You can extend these later if your team agrees on extra logic.
         """
         super().clean()
 
         if self.price is None:
             raise ValidationError({"price": "Price is required."})
 
-        # Prevent negative/zero pricing mistakes (common in demos).
         if self.price <= Decimal("0.00"):
             raise ValidationError({"price": "Price must be greater than 0."})
 
-        # Stock is PositiveIntegerField, but this keeps it explicit.
         if self.stock_quantity is None:
-            raise ValidationError({"stock_quantity": "Stock quantity is required."})
-
-        # Optional: if marked available, you probably want stock > 0.
-        # Comment out if your team wants 'available' with 0 stock.
-        if self.availability == self.Availability.AVAILABLE and self.stock_quantity == 0:
             raise ValidationError(
-                {"stock_quantity": "Available products should have stock greater than 0."}
+                {"stock_quantity": "Stock quantity is required."}
             )
 
-        # Optional: harvest date should not be in the future.
-        if self.harvest_date and self.harvest_date > timezone.localdate():
-            raise ValidationError({"harvest_date": "Harvest date cannot be in the future."})
+        if (
+            self.availability == self.Availability.AVAILABLE
+            and self.stock_quantity == 0
+        ):
+            raise ValidationError(
+                {
+                    "stock_quantity":
+                        "Available products should have stock greater than 0."
+                }
+            )
+
+        if (
+            self.harvest_date
+            and self.harvest_date > timezone.localdate()
+        ):
+            raise ValidationError(
+                {"harvest_date": "Harvest date cannot be in the future."}
+            )
 
     def save(self, *args, **kwargs):
         # Ensure model validation runs even if objects are created outside forms/admin.

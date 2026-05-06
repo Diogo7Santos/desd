@@ -17,11 +17,24 @@
         Discover fresh local produce.
       </p>
     </div>
+
+    <div class="top-categories">
+      <a class="chip {% if not selected_category %}chip-active{% endif %}"
+         href="{% url 'catalog:product_list' %}">
+        All
+      </a>
+
+      {% for key, label in categories %}
+        <a class="chip {% if selected_category == key %}chip-active{% endif %}"
+           href="{% url 'catalog:category_list' category=key %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="catalog-layout">
 
-    <!-- Left Filter Card -->
     <aside class="filter-card">
       <h2>Filter Products</h2>
 
@@ -69,6 +82,7 @@
 
         <div class="filter-group">
           <label for="producer">Producer</label>
+
           <select id="producer" name="producer" class="filter-input">
             <option value="">All Producers</option>
 
@@ -85,19 +99,29 @@
         </div>
 
         <div class="filter-group">
-          <label>Category</label>
+          <label>Organic Status</label>
 
-          <a class="chip {% if not selected_category %}chip-active{% endif %}"
-             href="{% url 'catalog:product_list' %}">
-            All
-          </a>
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: 100%; margin-top: 8px;">
 
-          {% for key, label in categories %}
-            <a class="chip {% if selected_category == key %}chip-active{% endif %}"
-               href="{% url 'catalog:category_list' category=key %}">
-              {{ label }}
+            <a class="chip {% if not selected_organic %}chip-active{% endif %}"
+               style="display: inline-flex; width: fit-content; max-width: 100%;"
+               href="{% url 'catalog:product_list' %}">
+              All
             </a>
-          {% endfor %}
+
+            <a class="chip {% if selected_organic == 'CERTIFIED' %}chip-active{% endif %}"
+               style="display: inline-flex; width: fit-content; max-width: 100%;"
+               href="?organic_status=CERTIFIED">
+              🌱 Certified
+            </a>
+
+            <a class="chip {% if selected_organic == 'NON_CERTIFIED' %}chip-active{% endif %}"
+               style="display: inline-flex; width: fit-content; max-width: 100%;"
+               href="?organic_status=NON_CERTIFIED">
+              Non-Certified
+            </a>
+
+          </div>
         </div>
 
         <div class="filter-actions">
@@ -113,7 +137,6 @@
       </form>
     </aside>
 
-    <!-- Product Results -->
     <section class="catalog-results">
 
       {% if request.user.is_authenticated and request.user.role == "PRODUCER" %}
@@ -140,16 +163,41 @@
               </div>
 
               <div>
-                <div class="product-name">{{ product.name }}</div>
-                <div class="product-price">£{{ product.price }}</div>
-
-                <div class="badges">
-                  <span class="badge">{{ product.get_category_display }}</span>
-                  <span class="badge">{{ product.get_availability_display }}</span>
-                  <span class="badge">Stock: {{ product.stock_quantity }}</span>
+                <div class="product-name">
+                  {{ product.name }}
                 </div>
 
-                <small>Producer: {{ product.producer.username }}</small>
+                <div class="product-price">
+                  £{{ product.price }}
+                </div>
+
+                <div class="badges">
+                  <span class="badge">
+                    {{ product.get_category_display }}
+                  </span>
+
+                  <span class="badge">
+                    {{ product.get_availability_display }}
+                  </span>
+
+                  <span class="badge">
+                    Stock: {{ product.stock_quantity }}
+                  </span>
+
+                  {% if product.organic_status == "CERTIFIED" %}
+                    <span class="badge organic-badge">
+                      🌱 Certified Organic
+                    </span>
+                  {% else %}
+                    <span class="badge non-organic-badge">
+                      Non-Certified
+                    </span>
+                  {% endif %}
+                </div>
+
+                <small>
+                  Producer: {{ product.producer.username }}
+                </small>
               </div>
 
             </a>
