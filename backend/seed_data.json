@@ -1,170 +1,455 @@
 [
-{
-  "model": "catalog.product",
-  "pk": 1,
-  "fields": {
-    "producer": 1,
-    "name": "Cherry Tomatoes",
-    "category": "VEGETABLES",
-    "description": "Fresh local cherry tomatoes",
-    "price": "2.25",
-    "unit": "kg",
-    "availability": "AVAILABLE",
-    "stock_quantity": 25,
-    "allergens": "",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/cherry.png",
-    "created_at": "2026-02-27T19:43:23.182Z",
-    "updated_at": "2026-02-27T19:50:30.558Z"
+  {
+    "model": "accounts.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "greenfarm",
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-02-27T19:43:22Z",
+      "email": "producer@foodnet.local",
+      "role": "PRODUCER",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$PaWHdgHSFykMhwSZfi5Q7W$I7rm1oV2Fis8unhZzViQwN8DMgv1eTcQ2Qv36XUAuAM=",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "localshopper",
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-02-27T19:43:23Z",
+      "email": "customer@foodnet.local",
+      "role": "CUSTOMER",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 3,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$rHvQEIyHa2e8fbgTJVdPSf$tUquDfZwWDfEYthuO3/fQ6vZD7iC/AaHJUmgQETYh8U=",
+      "last_login": null,
+      "is_superuser": true,
+      "username": "admin",
+      "first_name": "",
+      "last_name": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2026-02-27T19:46:06Z",
+      "email": "admin@admin.com",
+      "role": "CUSTOMER",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 4,
+    "fields": {
+      "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "bristolbakery",
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-02-27T19:50:00Z",
+      "email": "bakery@foodnet.local",
+      "role": "PRODUCER",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "accounts.producerprofile",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "business_name": "Green Farm",
+      "postcode": "BS1 1AA"
+    }
+  },
+  {
+    "model": "accounts.producerprofile",
+    "pk": 2,
+    "fields": {
+      "user": 4,
+      "business_name": "Bristol Bakery",
+      "postcode": "BS2 2BB"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 1,
+    "fields": {
+      "producer": 1,
+      "name": "Cherry Tomatoes",
+      "category": "VEGETABLES",
+      "description": "Fresh local cherry tomatoes",
+      "price": "2.25",
+      "unit": "kg",
+      "availability": "AVAILABLE",
+      "stock_quantity": 25,
+      "allergens": "",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/cherry.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:30Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 2,
+    "fields": {
+      "producer": 1,
+      "name": "Organic Carrots",
+      "category": "VEGETABLES",
+      "description": "Fresh local organic carrots",
+      "price": "1.80",
+      "unit": "kg",
+      "availability": "AVAILABLE",
+      "stock_quantity": 40,
+      "allergens": "",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/carrots.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:25Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 3,
+    "fields": {
+      "producer": 1,
+      "name": "Baby Spinach",
+      "category": "VEGETABLES",
+      "description": "Fresh local baby spinach",
+      "price": "1.50",
+      "unit": "bag",
+      "availability": "AVAILABLE",
+      "stock_quantity": 30,
+      "allergens": "",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/spinach.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:16Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 4,
+    "fields": {
+      "producer": 1,
+      "name": "Red Onions",
+      "category": "VEGETABLES",
+      "description": "Fresh local red onions",
+      "price": "1.20",
+      "unit": "kg",
+      "availability": "AVAILABLE",
+      "stock_quantity": 35,
+      "allergens": "",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/redonions.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:10Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 5,
+    "fields": {
+      "producer": 1,
+      "name": "Courgettes",
+      "category": "VEGETABLES",
+      "description": "Fresh local courgettes",
+      "price": "2.10",
+      "unit": "kg",
+      "availability": "AVAILABLE",
+      "stock_quantity": 20,
+      "allergens": "",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/courgettes.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:05Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 6,
+    "fields": {
+      "producer": 1,
+      "name": "Free Range Eggs",
+      "category": "DAIRY_EGGS",
+      "description": "Fresh local free range eggs",
+      "price": "3.50",
+      "unit": "dozen",
+      "availability": "AVAILABLE",
+      "stock_quantity": 50,
+      "allergens": "eggs",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/eggs.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:49:59Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 7,
+    "fields": {
+      "producer": 1,
+      "name": "Whole Milk",
+      "category": "DAIRY_EGGS",
+      "description": "Fresh local whole milk",
+      "price": "2.40",
+      "unit": "bottle",
+      "availability": "AVAILABLE",
+      "stock_quantity": 25,
+      "allergens": "milk",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/milk.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:49:53Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 8,
+    "fields": {
+      "producer": 1,
+      "name": "Mature Cheddar",
+      "category": "DAIRY_EGGS",
+      "description": "Fresh local mature cheddar",
+      "price": "4.75",
+      "unit": "block",
+      "availability": "AVAILABLE",
+      "stock_quantity": 15,
+      "allergens": "milk",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/cheddar.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:49:45Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 9,
+    "fields": {
+      "producer": 4,
+      "name": "Sourdough Bread",
+      "category": "BAKERY",
+      "description": "Artisan sourdough loaf baked locally in Bristol",
+      "price": "3.80",
+      "unit": "loaf",
+      "availability": "AVAILABLE",
+      "stock_quantity": 20,
+      "allergens": "gluten",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/sourdough.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 10,
+    "fields": {
+      "producer": 4,
+      "name": "Croissant",
+      "category": "BAKERY",
+      "description": "Buttery flaky croissant",
+      "price": "1.50",
+      "unit": "each",
+      "availability": "AVAILABLE",
+      "stock_quantity": 50,
+      "allergens": "gluten,milk",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/croissant.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 11,
+    "fields": {
+      "producer": 4,
+      "name": "Chocolate Muffin",
+      "category": "BAKERY",
+      "description": "Rich chocolate muffin",
+      "price": "2.20",
+      "unit": "each",
+      "availability": "AVAILABLE",
+      "stock_quantity": 30,
+      "allergens": "gluten,eggs,milk",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/muffin.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 12,
+    "fields": {
+      "producer": 4,
+      "name": "Baguette",
+      "category": "BAKERY",
+      "description": "Classic crusty baguette",
+      "price": "2.00",
+      "unit": "each",
+      "availability": "AVAILABLE",
+      "stock_quantity": 25,
+      "allergens": "gluten",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/baguette.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 13,
+    "fields": {
+      "producer": 4,
+      "name": "Cinnamon Roll",
+      "category": "BAKERY",
+      "description": "Soft cinnamon roll with sweet glaze",
+      "price": "2.50",
+      "unit": "each",
+      "availability": "AVAILABLE",
+      "stock_quantity": 35,
+      "allergens": "gluten,milk",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/cinnamon.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 14,
+    "fields": {
+      "producer": 4,
+      "name": "Blueberry Muffin",
+      "category": "BAKERY",
+      "description": "Fresh blueberry muffin",
+      "price": "2.30",
+      "unit": "each",
+      "availability": "AVAILABLE",
+      "stock_quantity": 28,
+      "allergens": "gluten,eggs",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/blueberry.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 15,
+    "fields": {
+      "producer": 4,
+      "name": "Banana Bread",
+      "category": "BAKERY",
+      "description": "Moist banana bread loaf",
+      "price": "3.00",
+      "unit": "loaf",
+      "availability": "AVAILABLE",
+      "stock_quantity": 18,
+      "allergens": "gluten,eggs",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/banana.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 16,
+    "fields": {
+      "producer": 4,
+      "name": "Pain au Chocolat",
+      "category": "BAKERY",
+      "description": "Chocolate-filled pastry",
+      "price": "1.80",
+      "unit": "each",
+      "availability": "AVAILABLE",
+      "stock_quantity": 40,
+      "allergens": "gluten,milk",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/painchoc.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 17,
+    "fields": {
+      "producer": 4,
+      "name": "White Bread",
+      "category": "BAKERY",
+      "description": "Soft white bread loaf",
+      "price": "2.20",
+      "unit": "loaf",
+      "availability": "AVAILABLE",
+      "stock_quantity": 22,
+      "allergens": "gluten",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/whitebread.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
+  },
+  {
+    "model": "catalog.product",
+    "pk": 18,
+    "fields": {
+      "producer": 4,
+      "name": "Multigrain Bread",
+      "category": "BAKERY",
+      "description": "Healthy multigrain loaf",
+      "price": "3.20",
+      "unit": "loaf",
+      "availability": "AVAILABLE",
+      "stock_quantity": 15,
+      "allergens": "gluten",
+      "harvest_date": "2026-02-27",
+      "image": "catalog/products/multigrain.png",
+      "created_at": "2026-02-27T19:43:23Z",
+      "updated_at": "2026-02-27T19:50:00Z"
+    }
   }
-},
-{
-  "model": "catalog.product",
-  "pk": 2,
-  "fields": {
-    "producer": 1,
-    "name": "Organic Carrots",
-    "category": "VEGETABLES",
-    "description": "Fresh local organic carrots",
-    "price": "1.80",
-    "unit": "kg",
-    "availability": "AVAILABLE",
-    "stock_quantity": 40,
-    "allergens": "",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/carrots.png",
-    "created_at": "2026-02-27T19:43:23.188Z",
-    "updated_at": "2026-02-27T19:50:25.379Z"
-  }
-},
-{
-  "model": "catalog.product",
-  "pk": 3,
-  "fields": {
-    "producer": 1,
-    "name": "Baby Spinach",
-    "category": "VEGETABLES",
-    "description": "Fresh local baby spinach",
-    "price": "1.50",
-    "unit": "bag",
-    "availability": "AVAILABLE",
-    "stock_quantity": 30,
-    "allergens": "",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/spinach.png",
-    "created_at": "2026-02-27T19:43:23.213Z",
-    "updated_at": "2026-02-27T19:50:16.169Z"
-  }
-},
-{
-  "model": "catalog.product",
-  "pk": 4,
-  "fields": {
-    "producer": 1,
-    "name": "Red Onions",
-    "category": "VEGETABLES",
-    "description": "Fresh local red onions",
-    "price": "1.20",
-    "unit": "kg",
-    "availability": "AVAILABLE",
-    "stock_quantity": 35,
-    "allergens": "",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/redonions.png",
-    "created_at": "2026-02-27T19:43:23.218Z",
-    "updated_at": "2026-02-27T19:50:10.916Z"
-  }
-},
-{
-  "model": "catalog.product",
-  "pk": 5,
-  "fields": {
-    "producer": 1,
-    "name": "Courgettes",
-    "category": "VEGETABLES",
-    "description": "Fresh local courgettes",
-    "price": "2.10",
-    "unit": "kg",
-    "availability": "AVAILABLE",
-    "stock_quantity": 20,
-    "allergens": "",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/courgettes.png",
-    "created_at": "2026-02-27T19:43:23.225Z",
-    "updated_at": "2026-02-27T19:50:05.554Z"
-  }
-},
-{
-  "model": "catalog.product",
-  "pk": 6,
-  "fields": {
-    "producer": 1,
-    "name": "Free Range Eggs",
-    "category": "DAIRY_EGGS",
-    "description": "Fresh local free range eggs",
-    "price": "3.50",
-    "unit": "dozen",
-    "availability": "AVAILABLE",
-    "stock_quantity": 50,
-    "allergens": "eggs",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/eggs.png",
-    "created_at": "2026-02-27T19:43:23.243Z",
-    "updated_at": "2026-02-27T19:49:59.194Z"
-  }
-},
-{
-  "model": "catalog.product",
-  "pk": 7,
-  "fields": {
-    "producer": 1,
-    "name": "Whole Milk",
-    "category": "DAIRY_EGGS",
-    "description": "Fresh local whole milk",
-    "price": "2.40",
-    "unit": "bottle",
-    "availability": "AVAILABLE",
-    "stock_quantity": 25,
-    "allergens": "milk",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/milk.png",
-    "created_at": "2026-02-27T19:43:23.258Z",
-    "updated_at": "2026-02-27T19:49:53.274Z"
-  }
-},
-{
-  "model": "catalog.product",
-  "pk": 8,
-  "fields": {
-    "producer": 1,
-    "name": "Mature Cheddar",
-    "category": "DAIRY_EGGS",
-    "description": "Fresh local mature cheddar",
-    "price": "4.75",
-    "unit": "block",
-    "availability": "AVAILABLE",
-    "stock_quantity": 15,
-    "allergens": "milk",
-    "harvest_date": "2026-02-27",
-    "image": "catalog/products/cheddar.png",
-    "created_at": "2026-02-27T19:43:23.264Z",
-    "updated_at": "2026-02-27T19:49:45.469Z"
-  }
-},
+,
 {
   "model": "accounts.user",
-  "pk": 1,
+  "pk": 5,
   "fields": {
     "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
     "last_login": null,
     "is_superuser": false,
-    "username": "greenfarm",
+    "username": "riverdaledairy",
     "first_name": "",
     "last_name": "",
     "is_staff": false,
     "is_active": true,
-    "date_joined": "2026-02-27T19:43:22Z",
-    "email": "producer@foodnet.local",
+    "date_joined": "2026-02-27T19:55:00Z",
+    "email": "dairy@foodnet.local",
     "role": "PRODUCER",
     "groups": [],
     "user_permissions": []
@@ -172,40 +457,285 @@
 },
 {
   "model": "accounts.user",
-  "pk": 2,
+  "pk": 6,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$PaWHdgHSFykMhwSZfi5Q7W$I7rm1oV2Fis8unhZzViQwN8DMgv1eTcQ2Qv36XUAuAM=",
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
     "last_login": null,
     "is_superuser": false,
-    "username": "localshopper",
+    "username": "sunnyorchard",
     "first_name": "",
     "last_name": "",
     "is_staff": false,
     "is_active": true,
-    "date_joined": "2026-02-27T19:43:23.065Z",
-    "email": "customer@foodnet.local",
-    "role": "CUSTOMER",
+    "date_joined": "2026-02-27T19:56:00Z",
+    "email": "orchard@foodnet.local",
+    "role": "PRODUCER",
     "groups": [],
     "user_permissions": []
   }
 },
 {
   "model": "accounts.user",
-  "pk": 3,
+  "pk": 7,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$rHvQEIyHa2e8fbgTJVdPSf$tUquDfZwWDfEYthuO3/fQ6vZD7iC/AaHJUmgQETYh8U=",
-    "last_login": "2026-02-27T19:46:10.724Z",
-    "is_superuser": true,
-    "username": "admin",
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "harvesthill",
     "first_name": "",
     "last_name": "",
-    "is_staff": true,
+    "is_staff": false,
     "is_active": true,
-    "date_joined": "2026-02-27T19:46:06.561Z",
-    "email": "admin@admin.com",
-    "role": "CUSTOMER",
+    "date_joined": "2026-02-27T19:57:00Z",
+    "email": "harvest@foodnet.local",
+    "role": "PRODUCER",
     "groups": [],
     "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 8,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bx0FCbfkILF5bEwyCPgAaC$Kmwpb4nw9GH7FrisDwaX2UQTTIIYdGX96OolrruXtlM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "severnvalley",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-27T19:58:00Z",
+    "email": "severn@foodnet.local",
+    "role": "PRODUCER",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 3,
+  "fields": {
+    "user": 5,
+    "business_name": "Riverdale Dairy",
+    "postcode": "BS3 3CC"
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 4,
+  "fields": {
+    "user": 6,
+    "business_name": "Sunny Orchard",
+    "postcode": "BS4 4DD"
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 5,
+  "fields": {
+    "user": 7,
+    "business_name": "Harvest Hill Organics",
+    "postcode": "BS5 5EE"
+  }
+},
+{
+  "model": "accounts.producerprofile",
+  "pk": 6,
+  "fields": {
+    "user": 8,
+    "business_name": "Severn Valley Meats",
+    "postcode": "BS6 6FF"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 19,
+  "fields": {
+    "producer": 5,
+    "name": "Greek Yogurt",
+    "category": "DAIRY_EGGS",
+    "description": "Thick creamy local Greek yogurt",
+    "price": "2.80",
+    "unit": "tub",
+    "availability": "AVAILABLE",
+    "stock_quantity": 25,
+    "allergens": "milk",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/greekyogurt.png",
+    "created_at": "2026-02-27T19:55:00Z",
+    "updated_at": "2026-02-27T19:55:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 20,
+  "fields": {
+    "producer": 5,
+    "name": "Salted Butter",
+    "category": "DAIRY_EGGS",
+    "description": "Local farmhouse salted butter",
+    "price": "2.60",
+    "unit": "block",
+    "availability": "AVAILABLE",
+    "stock_quantity": 18,
+    "allergens": "milk",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/butter.png",
+    "created_at": "2026-02-27T19:55:00Z",
+    "updated_at": "2026-02-27T19:55:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 21,
+  "fields": {
+    "producer": 5,
+    "name": "Soft Cheese",
+    "category": "DAIRY_EGGS",
+    "description": "Creamy soft cheese from local dairy milk",
+    "price": "3.40",
+    "unit": "tub",
+    "availability": "AVAILABLE",
+    "stock_quantity": 16,
+    "allergens": "milk",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/softcheese.png",
+    "created_at": "2026-02-27T19:55:00Z",
+    "updated_at": "2026-02-27T19:55:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 22,
+  "fields": {
+    "producer": 6,
+    "name": "Fresh Apples",
+    "category": "SEASONAL_SPECIALTIES",
+    "description": "Crisp seasonal apples from the orchard",
+    "price": "2.00",
+    "unit": "kg",
+    "availability": "AVAILABLE",
+    "stock_quantity": 35,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/apples.png",
+    "created_at": "2026-02-27T19:56:00Z",
+    "updated_at": "2026-02-27T19:56:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 23,
+  "fields": {
+    "producer": 6,
+    "name": "Strawberry Jam",
+    "category": "PRESERVES",
+    "description": "Homemade strawberry jam",
+    "price": "3.50",
+    "unit": "jar",
+    "availability": "AVAILABLE",
+    "stock_quantity": 20,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/strawberryjam.png",
+    "created_at": "2026-02-27T19:56:00Z",
+    "updated_at": "2026-02-27T19:56:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 24,
+  "fields": {
+    "producer": 7,
+    "name": "Kale",
+    "category": "VEGETABLES",
+    "description": "Fresh organic kale bunch",
+    "price": "1.70",
+    "unit": "bunch",
+    "availability": "AVAILABLE",
+    "stock_quantity": 30,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/kale.png",
+    "created_at": "2026-02-27T19:57:00Z",
+    "updated_at": "2026-02-27T19:57:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 25,
+  "fields": {
+    "producer": 7,
+    "name": "Fresh Basil",
+    "category": "VEGETABLES",
+    "description": "Fresh organic basil herbs",
+    "price": "1.30",
+    "unit": "bunch",
+    "availability": "AVAILABLE",
+    "stock_quantity": 22,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/basil.png",
+    "created_at": "2026-02-27T19:57:00Z",
+    "updated_at": "2026-02-27T19:57:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 26,
+  "fields": {
+    "producer": 7,
+    "name": "Butternut Squash",
+    "category": "SEASONAL_SPECIALTIES",
+    "description": "Seasonal organic butternut squash",
+    "price": "2.60",
+    "unit": "each",
+    "availability": "AVAILABLE",
+    "stock_quantity": 18,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/squash.png",
+    "created_at": "2026-02-27T19:57:00Z",
+    "updated_at": "2026-02-27T19:57:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 27,
+  "fields": {
+    "producer": 8,
+    "name": "Free Range Chicken",
+    "category": "OTHER",
+    "description": "Locally sourced free range chicken",
+    "price": "7.50",
+    "unit": "kg",
+    "availability": "AVAILABLE",
+    "stock_quantity": 12,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/chicken.png",
+    "created_at": "2026-02-27T19:58:00Z",
+    "updated_at": "2026-02-27T19:58:00Z"
+  }
+},
+{
+  "model": "catalog.product",
+  "pk": 28,
+  "fields": {
+    "producer": 8,
+    "name": "Pork Sausages",
+    "category": "OTHER",
+    "description": "Traditional local pork sausages",
+    "price": "4.80",
+    "unit": "pack",
+    "availability": "AVAILABLE",
+    "stock_quantity": 20,
+    "allergens": "",
+    "harvest_date": "2026-02-27",
+    "image": "catalog/products/sausages.png",
+    "created_at": "2026-02-27T19:58:00Z",
+    "updated_at": "2026-02-27T19:58:00Z"
   }
 }
 ]

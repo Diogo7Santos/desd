@@ -13,6 +13,6 @@ urlpatterns = [
     path("account/", account_page, name="account"),
 
     path("catalog/", customer_home, name="customer_home"),
-    path("producer/products/", producer_home, name="producer_home"),
+    path("catalog/producer/products/", producer_home, name="producer_home"),
     path("admin/", admin_home, name="admin_home"),
 ]

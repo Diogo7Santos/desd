@@ -333,6 +333,8 @@ def is_verified_business_customer(user):
         and user.customer_profile.customer_type_id in [
             CustomerProfile.CustomerType.RESTAURANT,
             CustomerProfile.CustomerType.COMMUNITY_GROUP,
+            CustomerProfile.CustomerType.YOUNG_PROFESSIONAL,
+            CustomerProfile.CustomerType.FAMILIES,
         ]
         and user.customer_profile.is_business_verified
     )
@@ -351,4 +353,20 @@ def is_community_group_customer(user):
         and getattr(user, "role", None) == User.Role.CUSTOMER
         and hasattr(user, "customer_profile")
         and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.COMMUNITY_GROUP
+    )
+
+def is_young_professional_customer(user):
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.YOUNG_PROFESSIONAL
+    )
+
+def is_families_customer(user):     
+    return (
+        user.is_authenticated
+        and getattr(user, "role", None) == User.Role.CUSTOMER
+        and hasattr(user, "customer_profile")
+        and user.customer_profile.customer_type_id == CustomerProfile.CustomerType.FAMILIES
     )
