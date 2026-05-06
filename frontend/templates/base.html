@@ -26,25 +26,27 @@
             <a href="{% url 'catalog:product_list' %}">Marketplace</a>
         
             {% if user.is_authenticated %}
-
                 {% if user.role == "PRODUCER" %}
                     <a href="{% url 'orders:producer_dashboard' %}">Incoming Orders</a>
                     <a href="{% url 'catalog:product_create' %}">Add Product</a>
+                    <a href="{% url 'payments-dashboard' %}">Payments</a>
+                    <a href="{% url 'payments-records-page' %}">Payment Records</a>
+                    <a href="{% url 'payments-settlements-page' %}">Settlements</a>
+                    <a href="{% url 'payments-report-page' %}">Commission Report</a>
                 {% else %}
                     <a href="{% url 'cart:view_cart' %}">Cart</a>
                     <a href="{% url 'orders:order_history' %}">Orders</a>
-
                 {% endif %}
             {% endif %}
         </nav>
 
         <!-- Auth Section  (check if _nav is used)-->
         <div class="auth-section">
-            {% if request.user.is_authenticated %}
+            {% if user.is_authenticated %}
+                <a href="{% url 'account' %}" class="btn-outline">My Account</a>
                 <span class="user-label">
                     {{ request.user.email|default:request.user.username }}
                 </span>
-                <a class="btn-outline" href="{% url 'account' %}">My Account</a>
                 <form method="post" action="{% url 'logout' %}" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit" class="btn-outline">Logout</button>
