@@ -614,7 +614,7 @@
   "fields": {
     "producer": 6,
     "name": "Fresh Apples",
-    "category": "SEASONAL_SPECIALTIES",
+    "category": "SEASONAL",
     "description": "Crisp seasonal apples from the orchard",
     "price": "2.00",
     "unit": "kg",
@@ -691,7 +691,7 @@
   "fields": {
     "producer": 7,
     "name": "Butternut Squash",
-    "category": "SEASONAL_SPECIALTIES",
+    "category": "SEASONAL",
     "description": "Seasonal organic butternut squash",
     "price": "2.60",
     "unit": "each",
