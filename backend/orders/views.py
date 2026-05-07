@@ -698,7 +698,6 @@ def order_history(request):
     """
     TC-021: Customer order history.
     """
-<<<<<<< HEAD
     orders = (
         Order.objects.filter(customer=request.user)
         .exclude(status=Order.Status.PENDING_PAYMENT)
@@ -716,13 +715,6 @@ def order_history(request):
 
     context = {
         'orders_data': orders_data,
-=======
-    orders = Order.objects.filter(customer=request.user).order_by("-created_at")
-
-    context = {
-        "orders": orders,
-        "show_recurring_orders_link": _can_manage_recurring_orders(request.user),
->>>>>>> 61745ab (update food miles and review and feedback)
     }
 
     return render(request, "orders/order_history.html", context)
