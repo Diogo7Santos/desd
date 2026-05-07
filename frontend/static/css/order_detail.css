@@ -109,6 +109,69 @@
     line-height: 1.5;
 }
 
+.producer-delivery-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.producer-delivery-summary-item {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.producer-delivery-summary-item-wide .detail-value-block {
+    margin-top: 6px;
+}
+
+.status-update-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.status-update-item {
+    padding: 16px;
+    border-radius: 14px;
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.status-update-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.status-update-time {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #666;
+}
+
+.status-update-note {
+    color: #222;
+    line-height: 1.55;
+}
+
+.status-update-author {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #666;
+}
+
+.status-update-empty {
+    margin: 0;
+    color: #666;
+}
+
 /* Status badges */
 .status-badge {
     display: inline-flex;
@@ -176,6 +239,41 @@
 .order-items-table tfoot td {
     border-bottom: none;
     padding-top: 14px;
+}
+
+.order-review-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.order-review-link:hover,
+.order-review-link:focus,
+.order-review-link:visited {
+    color: #fff;
+    text-decoration: none;
+}
+
+.order-review-link-muted {
+    background: #e8f5e9;
+    color: #256029;
+}
+
+.order-review-link-muted:hover,
+.order-review-link-muted:focus,
+.order-review-link-muted:visited {
+    color: #256029;
+}
+
+.order-review-pending {
+    color: #666;
+    font-size: 0.82rem;
 }
 
 .text-right {
@@ -256,6 +354,14 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .producer-delivery-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .producer-delivery-summary-item-wide {
+        grid-column: 1 / -1;
+    }
+
     .order-detail-sidebar .detail-card {
         position: sticky;
         top: 20px;
@@ -272,5 +378,10 @@
     .order-items-table td {
         padding: 10px 8px;
         font-size: 0.88rem;
+    }
+
+    .status-update-meta {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

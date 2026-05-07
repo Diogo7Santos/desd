@@ -10,6 +10,11 @@ urlpatterns = [
     path('history/', views.order_history, name='order_history'),
     path('detail/<int:order_id>/', views.order_detail, name='order_detail'),
     path('reorder/<int:order_id>/', views.reorder, name='reorder'),
+    path('recurring/', views.recurring_orders, name='recurring_orders'),
+    path('recurring/<int:recurring_order_id>/', views.recurring_order_detail, name='recurring_order_detail'),
+    path('recurring/<int:recurring_order_id>/update/', views.update_recurring_order, name='update_recurring_order'),
+    path('recurring/<int:recurring_order_id>/status/', views.update_recurring_order_status, name='update_recurring_order_status'),
+    path('recurring/<int:recurring_order_id>/checkout/', views.checkout_recurring_order, name='checkout_recurring_order'),
     path('producer/dashboard/', views.producer_dashboard, name='producer_dashboard'),
     path('producer/update-status/<int:order_id>/', views.update_order_status, name='update_status'),
 ]
