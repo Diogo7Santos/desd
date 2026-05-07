@@ -2,15 +2,35 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+<link rel="stylesheet" href="{% static 'payments/style.css' %}?v=20260507">
 {% endblock %}
 
 {% block title %}Commission Report{% endblock %}
 
 {% block content %}
-<section>
+<section class="payments-shell">
     <h2>Commission Report</h2>
+    <form method="get" class="filter-form">
+        <label class="filter-field">
+            From date
+            <input type="date" name="from_date" value="{{ from_date }}">
+        </label>
+        <label class="filter-field">
+            To date
+            <input type="date" name="to_date" value="{{ to_date }}">
+        </label>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filter</button>
+            <a href="{% url 'payments-report-page' %}" class="btn-secondary">Clear Filter</a>
+        </div>
+    </form>
     <p>Period: {{ report.start_date }} to {{ report.end_date }}</p>
+    <p class="export-action">
+        <a class="btn-export"
+           href="{% url 'producer-payment-report-csv' %}{% if from_date or to_date %}?{% endif %}{% if from_date %}from_date={{ from_date }}{% endif %}{% if from_date and to_date %}&{% endif %}{% if to_date %}to_date={{ to_date }}{% endif %}">
+            Download Payment Report CSV
+        </a>
+    </p>
 
     <div class="cards">
         <article class="card">

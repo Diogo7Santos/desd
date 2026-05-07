@@ -3,27 +3,39 @@
 
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+<link rel="stylesheet" href="{% static 'payments/style.css' %}?v=20260507">
 {% endblock %}
 
 {% block title %}Payments Dashboard{% endblock %}
 
 {% block content %}
-<section>
-    <h2>Dashboard</h2>
+<section class="payments-shell">
+    <h2>Payments Hub</h2>
+    <p class="section-subtitle">Manage payment records, weekly settlements, commission summaries, and tax-ready exports.</p>
+
     <div class="cards">
-        <article class="card">
+        <article class="card metric-card">
             <h3>Payment Records</h3>
             <p>{{ record_count }}</p>
         </article>
-        <article class="card">
+        <article class="card metric-card">
             <h3>Open Settlements</h3>
             <p>{{ open_settlement_count }}</p>
         </article>
-        <article class="card">
+        <article class="card metric-card">
             <h3>Paid Settlements</h3>
             <p>{{ paid_settlement_count }}</p>
         </article>
+        <article class="card metric-card">
+            <h3>Total Commission</h3>
+            <p>{{ total_commission }}</p>
+        </article>
     </div>
+
+    <p>
+        <a class="btn-primary" href="{% url 'producer-payment-report-csv' %}">
+            Download Payment Report CSV
+        </a>
+    </p>
 </section>
 {% endblock %}
