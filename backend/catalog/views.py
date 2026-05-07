@@ -107,9 +107,7 @@ def _apply_catalog_filters(request: HttpRequest, products):
     return products, filter_context
 
 
-# ----------------------------
 # Customer-facing views
-# ----------------------------
 
 def product_list(request: HttpRequest) -> HttpResponse:
     products = (
@@ -195,15 +193,17 @@ def product_detail(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "pages/product_detail.html", {"product": product})
 
 
-# ----------------------------
 # Producer-facing views
-# ----------------------------
 
 @login_required
 def producer_products(request: HttpRequest) -> HttpResponse:
     """
     Producer dashboard page:
     shows only products owned by the logged-in producer.
+
+    TC-023:
+    also generates low stock alerts for products where stock is at or below
+    the producer-defined low_stock_threshold.
     """
     if not _is_producer(request.user):
         raise PermissionDenied("Only producers can manage products.")
@@ -214,10 +214,18 @@ def producer_products(request: HttpRequest) -> HttpResponse:
         .order_by("-created_at")
     )
 
+    low_stock_products = [
+        product for product in products
+        if product.is_low_stock or product.is_out_of_stock
+    ]
+
     return render(
         request,
         "pages/producer_products.html",
-        {"products": products},
+        {
+            "products": products,
+            "low_stock_products": low_stock_products,
+        },
     )
 
 
@@ -252,8 +260,9 @@ def product_create(request: HttpRequest) -> HttpResponse:
 def product_update(request: HttpRequest, pk: int) -> HttpResponse:
     """
     Producer can edit only their own products.
-    Supports TC-011, TC-015, and TC-016 by allowing updates to:
+    Supports TC-011, TC-015, TC-016, and TC-023 by allowing updates to:
     - stock_quantity
+    - low_stock_threshold
     - allergens
     - availability
     - and all other product details
@@ -280,7 +289,7 @@ def product_update(request: HttpRequest, pk: int) -> HttpResponse:
         "form": form,
         "product": product,
         "form_title": "Edit Product",
-        "form_subtitle": "Update stock, allergens, seasonal availability, and other product details.",
+        "form_subtitle": "Update stock, low stock threshold, allergens, seasonal availability, and other product details.",
         "submit_label": "Update Product",
         "cancel_url": "catalog:producer_products",
     }
