@@ -14,6 +14,7 @@ class ProductForm(forms.ModelForm):
     - Required fields are present
     - Price > 0
     - Stock is non-negative (PositiveIntegerField already enforces)
+    - Low stock threshold can be set by producers (TC-023)
     - Harvest date defaults to today if not provided
     - Allergen input is normalized
     - Organic certification can be selected (TC-014)
@@ -24,12 +25,13 @@ class ProductForm(forms.ModelForm):
         fields = [
             "name",
             "category",
-            "organic_status",   # NEW
+            "organic_status",
             "description",
             "price",
             "unit",
             "availability",
             "stock_quantity",
+            "low_stock_threshold",
             "allergens",
             "harvest_date",
             "image",
@@ -49,7 +51,6 @@ class ProductForm(forms.ModelForm):
                 }
             ),
 
-            # NEW
             "organic_status": forms.Select(
                 attrs={
                     "class": "form-control",
@@ -91,6 +92,14 @@ class ProductForm(forms.ModelForm):
                 }
             ),
 
+            "low_stock_threshold": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                    "placeholder": "e.g., 10",
+                }
+            ),
+
             "allergens": forms.TextInput(
                 attrs={
                     "class": "form-control",
@@ -125,6 +134,19 @@ class ProductForm(forms.ModelForm):
 
         return price
 
+    def clean_low_stock_threshold(self):
+        low_stock_threshold = self.cleaned_data.get("low_stock_threshold")
+
+        if low_stock_threshold is None:
+            raise forms.ValidationError("Low stock threshold is required.")
+
+        if low_stock_threshold < 0:
+            raise forms.ValidationError(
+                "Low stock threshold cannot be negative."
+            )
+
+        return low_stock_threshold
+
     def clean_allergens(self):
         """
         Normalise allergens to a simple comma-separated list.
@@ -153,6 +175,10 @@ class ProductForm(forms.ModelForm):
     def clean(self):
         """
         Cross-field validation.
+
+        Important for TC-023:
+        The stock quantity is allowed to be lower than the low stock threshold.
+        That is the intended trigger for the producer dashboard alert.
         """
         cleaned = super().clean()
 

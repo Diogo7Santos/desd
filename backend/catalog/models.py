@@ -17,6 +17,7 @@ class Product(models.Model):
     - TC-004: Customer can browse by category and only see Available/In Season products
     - TC-005: Customer can search by product name/description/producer name
     - TC-014: Customer can filter products by organic certification
+    - TC-023: Producer can set a low stock threshold and receive dashboard alerts
     """
 
     class Category(models.TextChoices):
@@ -32,12 +33,10 @@ class Product(models.Model):
         OUT_OF_SEASON = "OUT_OF_SEASON", "Out of Season"
         UNAVAILABLE = "UNAVAILABLE", "Unavailable"
 
-    # NEW: Organic certification support (TC-014)
     class OrganicStatus(models.TextChoices):
         CERTIFIED = "CERTIFIED", "Certified Organic"
         NON_CERTIFIED = "NON_CERTIFIED", "Not Certified Organic"
 
-    # --- Ownership ---
     producer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -45,15 +44,13 @@ class Product(models.Model):
         help_text="The producer (seller) who owns this listing.",
     )
 
-    # --- Core product fields ---
     name = models.CharField(max_length=120)
 
     category = models.CharField(
         max_length=32,
-        choices=Category.choices
+        choices=Category.choices,
     )
 
-    # NEW FIELD
     organic_status = models.CharField(
         max_length=20,
         choices=OrganicStatus.choices,
@@ -86,6 +83,11 @@ class Product(models.Model):
         help_text="Current inventory available for ordering.",
     )
 
+    low_stock_threshold = models.PositiveIntegerField(
+        default=10,
+        help_text="Producer-defined stock level that triggers a low stock dashboard alert.",
+    )
+
     allergens = models.CharField(
         max_length=255,
         blank=True,
@@ -105,7 +107,6 @@ class Product(models.Model):
         blank=True,
     )
 
-    # --- Useful metadata ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -114,13 +115,12 @@ class Product(models.Model):
         indexes = [
             models.Index(fields=["category", "availability"]),
             models.Index(fields=["name"]),
-            models.Index(fields=["organic_status"]),  # NEW INDEX
+            models.Index(fields=["organic_status"]),
+            models.Index(fields=["stock_quantity"]),
         ]
 
     def __str__(self) -> str:
         return f"{self.name} (£{self.price})"
-
-    # --------- Convenience helpers ---------
 
     @property
     def is_available(self) -> bool:
@@ -138,6 +138,43 @@ class Product(models.Model):
         return self.organic_status == self.OrganicStatus.CERTIFIED
 
     @property
+    def is_low_stock(self) -> bool:
+        """
+        TC-023 helper:
+        Returns True when stock is greater than zero but at or below the
+        producer-defined low stock threshold.
+        """
+        return (
+            self.stock_quantity > 0
+            and self.stock_quantity <= self.low_stock_threshold
+        )
+
+    @property
+    def is_out_of_stock(self) -> bool:
+        """
+        TC-023 helper:
+        Returns True when there is no stock remaining.
+        """
+        return self.stock_quantity == 0
+
+    @property
+    def stock_alert_message(self) -> str:
+        """
+        TC-023 helper:
+        Message displayed in the producer dashboard when stock is low.
+        """
+        if self.is_out_of_stock:
+            return f"Out of Stock Alert: {self.name} has no stock remaining."
+
+        if self.is_low_stock:
+            return (
+                f"Low Stock Alert: {self.name} - Only "
+                f"{self.stock_quantity} {self.unit} remaining."
+            )
+
+        return ""
+
+    @property
     def allergen_display(self) -> str:
         """
         Makes it easy to display
@@ -145,8 +182,6 @@ class Product(models.Model):
         """
         cleaned = (self.allergens or "").strip()
         return cleaned if cleaned else "No common allergens"
-
-    # --------- Model validation ---------
 
     def clean(self) -> None:
         """
@@ -165,10 +200,12 @@ class Product(models.Model):
                 {"stock_quantity": "Stock quantity is required."}
             )
 
-        if (
-            self.availability == self.Availability.AVAILABLE
-            and self.stock_quantity == 0
-        ):
+        if self.low_stock_threshold is None:
+            raise ValidationError(
+                {"low_stock_threshold": "Low stock threshold is required."}
+            )
+
+        if self.availability == self.Availability.AVAILABLE and self.stock_quantity == 0:
             raise ValidationError(
                 {
                     "stock_quantity":
@@ -176,10 +213,7 @@ class Product(models.Model):
                 }
             )
 
-        if (
-            self.harvest_date
-            and self.harvest_date > timezone.localdate()
-        ):
+        if self.harvest_date and self.harvest_date > timezone.localdate():
             raise ValidationError(
                 {"harvest_date": "Harvest date cannot be in the future."}
             )
