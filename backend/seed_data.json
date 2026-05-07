@@ -81,7 +81,7 @@
     "fields": {
       "user": 1,
       "business_name": "Green Farm",
-      "postcode": "BS1 1AA"
+      "postcode": "BS1 6PL"
     }
   },
   {
@@ -90,7 +90,7 @@
     "fields": {
       "user": 4,
       "business_name": "Bristol Bakery",
-      "postcode": "BS2 2BB"
+      "postcode": "BS5 6JY"
     }
   },
   {
@@ -521,7 +521,7 @@
   "fields": {
     "user": 5,
     "business_name": "Riverdale Dairy",
-    "postcode": "BS3 3CC"
+    "postcode": "BS2 8LX"
   }
 },
 {
@@ -530,7 +530,7 @@
   "fields": {
     "user": 6,
     "business_name": "Sunny Orchard",
-    "postcode": "BS4 4DD"
+    "postcode": "CF10 1AA"
   }
 },
 {
@@ -539,7 +539,7 @@
   "fields": {
     "user": 7,
     "business_name": "Harvest Hill Organics",
-    "postcode": "BS5 5EE"
+    "postcode": "BS8 1RL"
   }
 },
 {
@@ -548,7 +548,7 @@
   "fields": {
     "user": 8,
     "business_name": "Severn Valley Meats",
-    "postcode": "BS6 6FF"
+    "postcode": "BS5 6PR"
   }
 },
 {
