@@ -1,0 +1,146 @@
+{% extends "accounts/base.html" %}
+{% block title %}My Account{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 760px;">
+  <div class="page-header">
+    <h1 class="page-title">My Account</h1>
+    <p class="page-desc">View and update your account details.</p>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      {{ user_form.non_field_errors }}
+
+      <h3>Basic Details</h3>
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          {{ user_form.email }}
+          {{ user_form.email.errors }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        {{ user_form.phone }}
+        {{ user_form.phone.errors }}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <input class="form-input" type="text" value="{{ request.user.get_role_display }}" readonly>
+      </div>
+
+      {% if producer_form %}
+        <hr>
+        <h3>Producer Details</h3>
+
+        {{ producer_form.non_field_errors }}
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">Business Name</label>
+            {{ producer_form.business_name }}
+            {{ producer_form.business_name.errors }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Name</label>
+            {{ producer_form.contact_name }}
+            {{ producer_form.contact_name.errors }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Business Address</label>
+          {{ producer_form.business_address }}
+          {{ producer_form.business_address.errors }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Postcode</label>
+          {{ producer_form.postcode }}
+          {{ producer_form.postcode.errors }}
+        </div>
+      {% endif %}
+      
+        {% if customer_form and address_form %}
+        <hr>
+        <h3>Customer / Organisation Details</h3>
+
+        <div class="form-group">
+            <label class="form-label">Customer Type</label>
+            <div class="row">
+            {{ customer_form.customer_type_id }}
+            </div>
+            {{ customer_form.customer_type_id.errors }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Organisation Name</label>
+            {{ customer_form.organisation_name }}
+            {{ customer_form.organisation_name.errors }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            {{ customer_form.contact_person }}
+            {{ customer_form.contact_person.errors }}
+        </div>
+
+        <div class="form-group">
+            <label>
+            {{ customer_form.is_charity_or_education }} Charity / Education account
+            </label>
+            {{ customer_form.is_charity_or_education.errors }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Default Delivery Instructions</label>
+            {{ customer_form.default_delivery_instructions }}
+            {{ customer_form.default_delivery_instructions.errors }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Address Line 1</label>
+            {{ address_form.line_1 }}
+            {{ address_form.line_1.errors }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Address Line 2</label>
+            {{ address_form.line_2 }}
+            {{ address_form.line_2.errors }}
+        </div>
+
+        <div class="grid grid-2">
+            <div class="form-group">
+            <label class="form-label">City</label>
+            {{ address_form.city }}
+            {{ address_form.city.errors }}
+            </div>
+            <div class="form-group">
+            <label class="form-label">Postcode</label>
+            {{ address_form.postcode }}
+            {{ address_form.postcode.errors }}
+            </div>
+        </div>
+        
+        {% endif %}
+
+      <div class="row-between mt-16">
+        <button class="btn btn-primary" type="submit">Save changes</button>
+        {% if request.user.role == "PRODUCER" %}
+          <a class="btn btn-outline" href="{% url 'producer_home' %}">Back</a>
+        {% elif request.user.role == "CUSTOMER" %}
+          <a class="btn btn-outline" href="{% url 'customer_home' %}">Back</a>
+        {% else %}
+          <a class="btn btn-outline" href="{% url 'admin_home' %}">Back</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

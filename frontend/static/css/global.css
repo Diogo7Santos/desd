@@ -1,0 +1,128 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f9fafb;
+    color: #111;
+}
+
+/* Navbar */
+.navbar {
+    background: white;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 14px 24px;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-weight: 800;
+    font-size: 20px;
+    text-decoration: none;
+    color: black;
+}
+
+.nav-links a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    text-decoration: underline;
+}
+
+.auth-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-label {
+    font-weight: 600;
+}
+
+.btn-outline {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid black;
+    text-decoration: none;
+    font-weight: 500;
+    color: black;
+}
+
+.btn-outline:hover {
+    background: black;
+    color: white;
+}
+
+/* Messages */
+.messages-container {
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+.message {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.message.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.message.error {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Main Content */
+.main-content {
+    padding: 30px 20px;
+    min-height: 70vh;
+}
+
+/* Footer */
+.footer {
+    border-top: 1px solid rgba(0,0,0,0.08);
+    padding: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(0,0,0,0.6);
+}
+
+header.navbar {
+  color: black;
+}
+
+header.navbar a,
+header.navbar .logo,
+header.navbar .user-label,
+header.navbar a.btn-outline {
+  color: black;
+}
+
+.auth-section button.btn-outline {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.15);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}

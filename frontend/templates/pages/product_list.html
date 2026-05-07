@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Marketplace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="catalog-wrap">
+
+  <div class="catalog-header">
+    <div class="catalog-title">
+      <h1>Marketplace Catalog</h1>
+      <p class="catalog-subtitle">
+        Discover fresh local produce.
+      </p>
+    </div>
+
+    <div class="top-categories">
+      <a class="chip {% if not selected_category %}chip-active{% endif %}"
+         href="{% url 'catalog:product_list' %}">
+        All
+      </a>
+
+      {% for key, label in categories %}
+        <a class="chip {% if selected_category == key %}chip-active{% endif %}"
+           href="{% url 'catalog:category_list' category=key %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="catalog-layout">
+
+    <aside class="filter-card">
+      <h2>Filter Products</h2>
+
+      <form method="get" action="{% url 'catalog:product_list' %}">
+
+        <div class="filter-group">
+          <label for="q">Search</label>
+          <input
+            id="q"
+            class="filter-input"
+            type="search"
+            name="q"
+            placeholder="Search products..."
+            value="{{ search_query|default:'' }}"
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="min_price">Min Price</label>
+          <input
+            id="min_price"
+            class="filter-input"
+            type="number"
+            name="min_price"
+            placeholder="&pound;0.00"
+            step="0.01"
+            min="0"
+            value="{{ min_price|default:'' }}"
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="max_price">Max Price</label>
+          <input
+            id="max_price"
+            class="filter-input"
+            type="number"
+            name="max_price"
+            placeholder="&pound;20.00"
+            step="0.01"
+            min="0"
+            value="{{ max_price|default:'' }}"
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="producer">Producer</label>
+
+          <select id="producer" name="producer" class="filter-input">
+            <option value="">All Producers</option>
+
+            {% for producer in producers %}
+              <option value="{{ producer.producer__id }}"
+                {% if selected_producer|stringformat:"s" == producer.producer__id|stringformat:"s" %}
+                  selected
+                {% endif %}
+              >
+                {{ producer.producer__username }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Organic Status</label>
+
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: 100%; margin-top: 8px;">
+
+            <a class="chip {% if not selected_organic %}chip-active{% endif %}"
+               style="display: inline-flex; width: fit-content; max-width: 100%;"
+               href="{% url 'catalog:product_list' %}">
+              All
+            </a>
+
+            <a class="chip {% if selected_organic == 'CERTIFIED' %}chip-active{% endif %}"
+               style="display: inline-flex; width: fit-content; max-width: 100%;"
+               href="?organic_status=CERTIFIED">
+              🌱 Certified
+            </a>
+
+            <a class="chip {% if selected_organic == 'NON_CERTIFIED' %}chip-active{% endif %}"
+               style="display: inline-flex; width: fit-content; max-width: 100%;"
+               href="?organic_status=NON_CERTIFIED">
+              Non-Certified
+            </a>
+
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-primary" type="submit">
+            Apply Filters
+          </button>
+
+          <a class="btn" href="{% url 'catalog:product_list' %}">
+            Clear
+          </a>
+        </div>
+
+      </form>
+    </aside>
+
+    <section class="catalog-results">
+
+      {% if request.user.is_authenticated and request.user.role == "PRODUCER" %}
+        <div class="producer-dashboard-link">
+          <a class="btn btn-primary"
+             href="{% url 'catalog:producer_products' %}">
+            Producer Dashboard
+          </a>
+        </div>
+      {% endif %}
+
+      {% if products %}
+        <div class="catalog-grid">
+          {% for product in products %}
+            <a class="product-card"
+               href="{% url 'catalog:product_detail' pk=product.pk %}">
+
+              <div class="product-thumb">
+                {% if product.image %}
+                  <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                  <span>BRFN</span>
+                {% endif %}
+              </div>
+
+              <div>
+                <div class="product-name">
+                  {{ product.name }}
+                </div>
+
+                <div class="product-price">
+                  &pound;{{ product.price }}
+                </div>
+
+                <div class="badges">
+                  <span class="badge">
+                    {{ product.get_category_display }}
+                  </span>
+
+                  <span class="badge">
+                    {{ product.get_availability_display }}
+                  </span>
+
+                  <span class="badge">
+                    Stock: {{ product.stock_quantity }}
+                  </span>
+
+                  {% if product.organic_status == "CERTIFIED" %}
+                    <span class="badge organic-badge">
+                      🌱 Certified Organic
+                    </span>
+                  {% else %}
+                    <span class="badge non-organic-badge">
+                      Non-Certified
+                    </span>
+                  {% endif %}
+                </div>
+
+                {% if request.user.is_authenticated and request.user.role == "CUSTOMER" %}
+                  <div class="food-miles-row">
+                    {% if product.food_miles %}
+                      <span class="food-miles-pill {{ product.food_miles.impact_class }}">
+                        Food Miles: {{ product.food_miles.miles_display }}
+                      </span>
+                      <span class="food-miles-note">
+                        {{ product.food_miles.local_radius_message }}
+                      </span>
+                    {% else %}
+                      <span class="food-miles-pill food-miles-unavailable">
+                        Food miles unavailable
+                      </span>
+                    {% endif %}
+                  </div>
+                {% endif %}
+
+                <small>Producer: {{ product.producer.username }}</small>
+              </div>
+
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No products found.</p>
+      {% endif %}
+
+    </section>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Order Confirmation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/order_confirmation.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="confirmation-container">
+    <div class="confirmation-success">
+        <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <h1>Order Confirmed!</h1>
+        <p class="lead">Thank you for your order</p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="order-details-card">
+                <h5><i class="bi bi-receipt"></i> Order Details</h5>
+                <div class="row">
+                    <div class="col-md-6 detail-row">
+                        <strong>Order Number:</strong>
+                        <span class="order-number">{{ order.order_number }}</span>
+                    </div>
+                    <div class="col-md-6 detail-row">
+                        <strong>Order Date:</strong>
+                        <span class="value">{{ order.created_at|date:"F d, Y H:i" }}</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 detail-row">
+                        <strong>{% if items_by_producer|length > 1 %}First Delivery Date:{% else %}Delivery Date:{% endif %}</strong>
+                        <span class="value">{{ order.delivery_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="col-md-6 detail-row">
+                        <strong>Status:</strong>
+                        <span class="status-badge-confirm">{{ order.get_status_display }}</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 detail-row">
+                        <strong>Payment Status:</strong>
+                        <span class="value">{{ payment_status }}</span>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <strong>Delivery Address:</strong>
+                    <span class="value">{{ order.delivery_address }}<br>{{ order.delivery_postcode }}</span>
+                </div>
+
+                {% if customer_summary.is_business_customer %}
+                <div class="detail-row">
+                    <strong>Ordering Organisation:</strong>
+                    <span class="value">
+                        {{ customer_summary.organisation_name|default:customer_summary.display_name }}
+                        {% if customer_summary.contact_person %}
+                        <br>Contact: {{ customer_summary.contact_person }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if order.delivery_instructions %}
+                <div class="detail-row">
+                    <strong>{% if items_by_producer|length > 1 %}Overall Delivery Coordination Notes:{% else %}Delivery Instructions:{% endif %}</strong>
+                    <span class="value">{{ order.delivery_instructions }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            {% for producer, data in items_by_producer.items %}
+            <div class="producer-items-card">
+                <div class="producer-header">
+                    <h6><i class="bi bi-shop"></i> {{ producer.username }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="producer-delivery-summary">
+                        <div class="producer-delivery-summary-item">
+                            <span class="summary-label">Requested delivery</span>
+                            <span class="summary-value">{{ data.delivery_date|date:"F d, Y" }}</span>
+                        </div>
+                        {% if data.delivery_notes %}
+                        <div class="producer-delivery-summary-item producer-delivery-summary-item-wide">
+                            <span class="summary-label">Producer delivery note</span>
+                            <span class="summary-value">{{ data.delivery_notes }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data.items %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>&pound;{{ item.unit_price }}</td>
+                                <td class="text-end">&pound;{{ item.subtotal }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end">Producer Subtotal:</td>
+                                <td class="text-end">&pound;{{ data.subtotal }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if producer_contacts %}
+            <div class="order-details-card">
+                <h5><i class="bi bi-telephone"></i> Producer Coordination Contacts</h5>
+                {% for contact in producer_contacts %}
+                <div class="detail-row">
+                    <strong>{{ contact.business_name }}</strong>
+                    <span class="value">
+                        {{ contact.contact_name }}
+                        {% if contact.email %}
+                        <br>{{ contact.email }}
+                        {% endif %}
+                        {% if contact.postcode %}
+                        <br>{{ contact.postcode }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="order-total-card">
+                <div class="total-display">
+                    <h4>Order Total:</h4>
+                    <h4>&pound;{{ order.total_amount }}</h4>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'orders:order_history' %}" class="btn-view-history">
+                    <i class="bi bi-list"></i> View Order History
+                </a>
+                {% if show_recurring_orders_link %}
+                <a href="{% url 'orders:recurring_orders' %}" class="btn-view-history">
+                    <i class="bi bi-arrow-repeat"></i> Manage Recurring Orders
+                </a>
+                {% endif %}
+                <a href="{% url 'catalog:product_list' %}" class="btn-continue-shopping">
+                    <i class="bi bi-shop"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

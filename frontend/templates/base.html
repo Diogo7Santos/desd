@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}FoodNet{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<header class="navbar">
+    <div class="nav-container">
+
+        <!-- Logo -->
+        <a href="{% url 'catalog:product_list' %}" class="logo">
+            FoodNet
+        </a>
+
+        <!-- Navigation Links -->
+        <nav class="nav-links">
+            <a href="{% url 'catalog:product_list' %}">Marketplace</a>
+        
+            {% if user.is_authenticated %}
+                {% if user.role == "ADMIN" %}
+                    <a href="{% url 'admin_dashboard:dashboard' %}">Admin Portal</a>
+                {% elif user.role == "PRODUCER" %}
+                    <a href="{% url 'orders:producer_dashboard' %}">Incoming Orders</a>
+                    <a href="{% url 'catalog:product_create' %}">Add Product</a>
+                    <a href="{% url 'payments-dashboard' %}">Payments</a>
+                    <a href="{% url 'payments-records-page' %}">Payment Records</a>
+                    <a href="{% url 'payments-settlements-page' %}">Settlements</a>
+                    <a href="{% url 'payments-report-page' %}">Commission Report</a>
+                {% else %}
+                    <a href="{% url 'cart:view_cart' %}">Cart</a>
+                    <a href="{% url 'orders:order_history' %}">Orders</a>
+                {% endif %}
+            {% endif %}
+        </nav>
+
+        <!-- Auth Section  (check if _nav is used)-->
+        <div class="auth-section">
+            {% if user.is_authenticated %}
+                <a href="{% url 'account' %}" class="btn-outline">My Account</a>
+                <span class="user-label">
+                    {{ request.user.email|default:request.user.username }}
+                </span>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-outline">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-outline">Login</a>
+                <a href="{% url 'register' %}" class="btn-outline">Register</a>
+            {% endif %}
+        </div>
+
+    </div>
+</header>
+
+<!-- Django Messages -->
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Main Content -->
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="footer-container">
+        © {{ now|date:"Y" }} FoodNet — Local Marketplace Platform
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Order {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/order_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="order-detail-container">
+    <div class="order-detail-header">
+        <div class="order-detail-header-row">
+            <div>
+                <h1>Order {{ order.order_number }}</h1>
+                <p>Review the full details of this order.</p>
+            </div>
+
+            <a href="{% url 'orders:order_history' %}" class="detail-action-btn">
+                <i class="bi bi-arrow-left"></i> Back to History
+            </a>
+        </div>
+    </div>
+
+    <div class="order-detail-layout">
+        <div class="order-detail-main">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Order Information</h3>
+                </div>
+
+                <div class="detail-card-body">
+                    <div class="detail-info-grid">
+                        <div class="detail-info-block">
+                            <span class="detail-label">Order Date</span>
+                            <span class="detail-value">{{ order.created_at|date:"F d, Y H:i" }}</span>
+                        </div>
+
+                        <div class="detail-info-block">
+                            <span class="detail-label">{% if items_by_producer|length > 1 %}First Delivery Date{% else %}Delivery Date{% endif %}</span>
+                            <span class="detail-value">{{ order.delivery_date|date:"F d, Y" }}</span>
+                        </div>
+
+                        <div class="detail-info-block">
+                            <span class="detail-label">Status</span>
+                            <span class="status-badge status-{{ order.status|lower }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="detail-info-block">
+                            <span class="detail-label">Payment</span>
+                            <span class="detail-value">{{ payment_status }}</span>
+                        </div>
+
+                        <div class="detail-info-block">
+                            <span class="detail-label">Total Amount</span>
+                            <span class="detail-value total-value">&pound;{{ order.total_amount }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <span class="detail-label">Delivery Address</span>
+                        <div class="detail-value-block">
+                            {{ order.delivery_address }}<br>
+                            {{ order.delivery_postcode }}
+                        </div>
+                    </div>
+
+                    {% if order.delivery_instructions %}
+                    <div class="detail-section">
+                        <span class="detail-label">{% if items_by_producer|length > 1 %}Overall Delivery Coordination Notes{% else %}Delivery Instructions{% endif %}</span>
+                        <div class="detail-value-block">
+                            {{ order.delivery_instructions }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Latest Status Update</h3>
+                </div>
+
+                <div class="detail-card-body">
+                    {% if latest_status_update %}
+                    <div class="status-update-item">
+                        <div class="status-update-meta">
+                            <span class="status-badge status-{{ latest_status_update.status|lower }}">
+                                {{ latest_status_update.get_status_display }}
+                            </span>
+                            <span class="status-update-time">{{ latest_status_update.created_at|date:"F d, Y H:i" }}</span>
+                        </div>
+                        <div class="status-update-note">
+                            {{ latest_status_update.notes }}
+                        </div>
+                        {% if latest_status_update.changed_by %}
+                        <div class="status-update-author">
+                            Updated by {{ latest_status_update.changed_by.username }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="status-update-empty">No updates yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% for producer, data in items_by_producer.items %}
+                <div class="detail-card producer-card">
+                    <div class="detail-card-header">
+                        <h3><i class="bi bi-shop"></i> {{ producer.username }}</h3>
+                    </div>
+
+                    <div class="detail-card-body">
+                        <div class="producer-delivery-summary">
+                            <div class="producer-delivery-summary-item">
+                                <span class="detail-label">Requested delivery</span>
+                                <span class="detail-value">{{ data.delivery_date|date:"F d, Y" }}</span>
+                            </div>
+                            {% if data.delivery_notes %}
+                            <div class="producer-delivery-summary-item producer-delivery-summary-item-wide">
+                                <span class="detail-label">Producer delivery note</span>
+                                <div class="detail-value-block">{{ data.delivery_notes }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="order-items-table-wrap">
+                            <table class="order-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th class="text-right">Subtotal</th>
+                                        <th>Review</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in data.items %}
+                                        <tr>
+                                            <td>{{ item.product_name }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>&pound;{{ item.unit_price }}</td>
+                                            <td class="text-right">&pound;{{ item.subtotal }}</td>
+                                            <td>
+                                                {% if item.customer_review %}
+                                                    <a href="{{ item.review_url }}" class="order-review-link order-review-link-muted">
+                                                        Review Submitted
+                                                    </a>
+                                                {% elif item.can_write_review %}
+                                                    <a href="{{ item.review_url }}" class="order-review-link">
+                                                        Write Review
+                                                    </a>
+                                                {% else %}
+                                                    <span class="order-review-pending">Available after delivery</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-right"><strong>Subtotal</strong></td>
+                                        <td class="text-right"><strong>&pound;{{ data.subtotal }}</strong></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="order-detail-sidebar">
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h3>Actions</h3>
+                </div>
+
+                <div class="detail-card-body">
+                    <div class="detail-actions">
+                        <form method="post" action="{% url 'orders:reorder' order.id %}" class="detail-action-form">
+                            {% csrf_token %}
+                            <button type="submit" class="detail-action-btn detail-action-danger">
+                                <i class="bi bi-arrow-repeat"></i> Reorder These Items
+                            </button>
+                        </form>
+
+                        {% if show_recurring_orders_link %}
+                        <a href="{% url 'orders:recurring_orders' %}" class="detail-action-btn">
+                            <i class="bi bi-calendar-week"></i> Manage Recurring Orders
+                        </a>
+                        {% endif %}
+
+                        <a href="{% url 'catalog:product_list' %}" class="detail-action-btn">
+                            <i class="bi bi-shop"></i> Browse Products
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

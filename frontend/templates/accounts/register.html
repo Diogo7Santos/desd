@@ -1,0 +1,221 @@
+{% extends "accounts/base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 760px;">
+  <div class="page-header">
+    <h1 class="page-title">Register</h1>
+    <p class="page-desc">Create a customer or producer account.</p>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      {{ form.non_field_errors }}
+
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          {{ form.phone }}
+          {{ form.phone.errors }}
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          {{ form.password1 }}
+          {{ form.password1.errors }}
+          <small>Minimum 8 characters. Avoid common or numeric-only passwords.</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          {{ form.password2 }}
+          {{ form.password2.errors }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Account Type</label>
+        <div class="row">
+          {{ form.role }}
+        </div>
+        {{ form.role.errors }}
+      </div>
+
+      <div id="producer-fields" style="display: none;">
+        <hr>
+        <h3>Producer details</h3>
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">Business Name</label>
+            {{ form.business_name }}
+            {{ form.business_name.errors }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Name</label>
+            {{ form.contact_name }}
+            {{ form.contact_name.errors }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Business Address</label>
+          {{ form.business_address }}
+          {{ form.business_address.errors }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Business Postcode</label>
+          {{ form.producer_postcode }}
+          {{ form.producer_postcode.errors }}
+        </div>
+      </div>
+
+      <div id="customer-fields" style="display: none;">
+        <hr>
+        <h3>Customer details</h3>
+
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          {{ form.full_name }}
+          {{ form.full_name.errors }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Customer Type</label>
+          <div class="row">
+            {{ form.customer_type_id }}
+          </div>
+          {{ form.customer_type_id.errors }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Address Line 1</label>
+          {{ form.line_1 }}
+          {{ form.line_1.errors }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Address Line 2</label>
+          {{ form.line_2 }}
+          {{ form.line_2.errors }}
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">City</label>
+            {{ form.city }}
+            {{ form.city.errors }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Postcode</label>
+            {{ form.customer_postcode }}
+            {{ form.customer_postcode.errors }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            {{ form.accept_terms }} I accept the terms and conditions
+          </label>
+          {{ form.accept_terms.errors }}
+        </div>
+
+        <div id="organisation-fields" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">Organisation Name</label>
+            {{ form.organisation_name }}
+            {{ form.organisation_name.errors }}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            {{ form.contact_person }}
+            {{ form.contact_person.errors }}
+          </div>
+
+          <div class="form-group">
+            <label>
+              {{ form.is_charity_or_education }} Charity or education organisation
+            </label>
+            {{ form.is_charity_or_education.errors }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Default Delivery Instructions</label>
+          {{ form.default_delivery_instructions }}
+          {{ form.default_delivery_instructions.errors }}
+        </div>
+      </div>
+
+      <div class="row-between mt-16">
+        <button class="btn btn-primary" type="submit">Create account</button>
+        <a class="btn btn-outline" href="{% url 'login' %}">Back to login</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+    const producerFields = document.getElementById("producer-fields");
+    const customerFields = document.getElementById("customer-fields");
+    const organisationFields = document.getElementById("organisation-fields");
+
+    function getCheckedValue(name) {
+      const checked = document.querySelector(`input[name="${name}"]:checked`);
+      return checked ? checked.value.toUpperCase() : null;
+    }
+
+    function toggleCustomerTypeSection() {
+      if (!organisationFields) return;
+
+      organisationFields.style.display = "none";
+
+      const selectedCustomerType = getCheckedValue("customer_type_id");
+
+      if (
+        selectedCustomerType === "1" ||
+        selectedCustomerType === "2" ||
+        selectedCustomerType === "RESTAURANT" ||
+        selectedCustomerType === "COMMUNITY_GROUP"
+      ) {
+        organisationFields.style.display = "block";
+      }
+    }
+
+    function toggleRoleSections() {
+      const selectedRole = getCheckedValue("role");
+
+      producerFields.style.display = "none";
+      customerFields.style.display = "none";
+
+      if (selectedRole === "PRODUCER") {
+        producerFields.style.display = "block";
+      } else if (selectedRole === "CUSTOMER") {
+        customerFields.style.display = "block";
+        toggleCustomerTypeSection();
+      }
+    }
+
+    roleRadios.forEach(radio => {
+      radio.addEventListener("change", toggleRoleSections);
+    });
+
+    document.querySelectorAll('input[name="customer_type_id"]').forEach(radio => {
+      radio.addEventListener("change", toggleCustomerTypeSection);
+    });
+
+    toggleRoleSections();
+  });
+</script>
+{% endblock %}

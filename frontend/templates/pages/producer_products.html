@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Producer Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="catalog-wrap">
+
+  <div class="catalog-header">
+    <div class="catalog-header-top">
+
+      <div class="catalog-title">
+        <h1>Producer Dashboard</h1>
+        <p class="catalog-subtitle">
+          Manage your products, update stock, allergens, and seasonal availability.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a class="btn" href="{% url 'catalog:product_list' %}">
+          Back to Marketplace
+        </a>
+        <a class="btn btn-primary" href="{% url 'catalog:product_create' %}">
+          Add Product
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  {% if low_stock_products %}
+    <div style="margin-bottom: 22px; padding: 18px 20px; border: 1px solid #f0c36d; border-radius: 16px; background: #fff7df;">
+      <h3 style="margin-top: 0; margin-bottom: 10px;">
+        Low Stock Alerts
+      </h3>
+
+      {% for product in low_stock_products %}
+        <div style="margin: 8px 0; padding: 12px; border-radius: 12px; background: white;">
+          <strong>{{ product.stock_alert_message }}</strong>
+          <br>
+          <span>
+            Threshold: {{ product.low_stock_threshold }} {{ product.unit }}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if products %}
+    <div class="catalog-grid">
+      {% for product in products %}
+        <div class="product-card">
+
+          <div class="product-thumb">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+              <span>BRFN</span>
+            {% endif %}
+          </div>
+
+          <div style="flex: 1;">
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-price">£{{ product.price }}</div>
+
+            <div class="badges">
+              <span class="badge">{{ product.get_category_display }}</span>
+              <span class="badge">{{ product.get_availability_display }}</span>
+              <span class="badge">Stock: {{ product.stock_quantity }}</span>
+              <span class="badge">Low Stock Threshold: {{ product.low_stock_threshold }}</span>
+
+              {% if product.is_low_stock %}
+                <span class="badge" style="background: #fff3cd; color: #856404; border: 1px solid #f0c36d;">
+                  Low Stock
+                </span>
+              {% endif %}
+
+              {% if product.is_out_of_stock %}
+                <span class="badge" style="background: #f8d7da; color: #842029; border: 1px solid #f5c2c7;">
+                  Out of Stock
+                </span>
+              {% endif %}
+            </div>
+
+            <div style="margin-top: 10px; font-size: 14px; color: rgba(0,0,0,0.75);">
+              <p style="margin: 4px 0;">
+                <strong>Allergens:</strong>
+                {% if product.allergens %}
+                  {{ product.allergens }}
+                {% else %}
+                  No common allergens
+                {% endif %}
+              </p>
+
+              {% if product.harvest_date %}
+                <p style="margin: 4px 0;">
+                  <strong>Harvest Date:</strong> {{ product.harvest_date }}
+                </p>
+              {% endif %}
+            </div>
+
+            <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <a class="btn" href="{% url 'catalog:product_detail' pk=product.pk %}">
+                View
+              </a>
+              <a class="btn btn-primary" href="{% url 'catalog:product_update' pk=product.pk %}">
+                Edit Product
+              </a>
+            </div>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="margin-top: 18px; padding: 24px; border: 1px solid rgba(0,0,0,0.1); border-radius: 16px; background: white;">
+      <h3 style="margin-top: 0;">No products added yet</h3>
+      <p style="margin-bottom: 16px; color: rgba(0,0,0,0.7);">
+        You have not created any product listings yet. Start by adding your first product.
+      </p>
+      <a class="btn btn-primary" href="{% url 'catalog:product_create' %}">
+        Add Your First Product
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

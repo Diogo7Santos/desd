@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Order History{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/order_history.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="history-header">
+        <h1>Order History</h1>
+        <p>View and manage your past orders.</p>
+        {% if show_recurring_orders_link %}
+        <a href="{% url 'orders:recurring_orders' %}" class="history-action-btn">
+            <i class="bi bi-arrow-repeat"></i> Recurring Orders
+        </a>
+        {% endif %}
+    </div>
+
+    {% if orders_data %}
+        <div class="orders-grid">
+            {% for item in orders_data %}
+                {% with order=item.order %}
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div class="order-header-row">
+                            <div>
+                                <div class="order-number">{{ order.order_number }}</div>
+                                <div class="order-date">{{ order.created_at|date:"M d, Y" }}</div>
+                            </div>
+
+                            <span class="status-badge status-{{ order.status|lower }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="mt-2">
+                            <span class="info-label">Payment</span>
+                            <span class="info-value">{{ item.payment_status }}</span>
+                        </div>
+                    </div>
+
+                    <div class="order-info">
+                        <div class="info-item">
+                            <span class="info-label">Delivery Date</span>
+                            <span class="info-value">{{ order.delivery_date|date:"M d, Y" }}</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Postcode</span>
+                            <span class="info-value">{{ order.delivery_postcode }}</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Total Amount</span>
+                            <span class="info-value total-value">£{{ order.total_amount }}</span>
+                        </div>
+                    </div>
+
+                    <div class="order-actions">
+                        <a href="{% url 'orders:order_detail' order.id %}" class="history-action-btn">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+
+                        <form method="post" action="{% url 'orders:reorder' order.id %}" class="history-action-form">
+                            {% csrf_token %}
+                            <button type="submit" class="history-action-btn history-action-secondary">
+                                <i class="bi bi-arrow-repeat"></i> Reorder
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-card">
+            <h3>No orders yet</h3>
+            <p>Start shopping to place your first order.</p>
+            <a href="{% url 'catalog:product_list' %}" class="history-action-btn">
+                <i class="bi bi-shop"></i> Browse Products
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

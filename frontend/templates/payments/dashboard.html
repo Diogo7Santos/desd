@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+{% endblock %}
+
+{% block title %}Payments Dashboard{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Dashboard</h2>
+    <div class="cards">
+        <article class="card">
+            <h3>Payment Records</h3>
+            <p>{{ record_count }}</p>
+        </article>
+        <article class="card">
+            <h3>Open Settlements</h3>
+            <p>{{ open_settlement_count }}</p>
+        </article>
+        <article class="card">
+            <h3>Paid Settlements</h3>
+            <p>{{ paid_settlement_count }}</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

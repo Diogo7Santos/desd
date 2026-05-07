@@ -1,0 +1,93 @@
+/* repo/frontend/static/css/product_form.css */
+
+.form-wrap {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 32px;
+    border-radius: 20px;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  }
+  
+  .form-title {
+    margin-bottom: 6px;
+    font-size: 26px;
+    font-weight: 800;
+  }
+  
+  .form-subtitle {
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: rgba(0,0,0,0.6);
+  }
+  
+  .form-group {
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-group label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  
+  .form-control {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.15);
+    font-size: 14px;
+    transition: border 0.15s ease, box-shadow 0.15s ease;
+  }
+  
+  .form-control:focus {
+    outline: none;
+    border-color: black;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 14px;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+  }
+  
+  .form-error {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #c0392b;
+  }
+  
+  .btn {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.15);
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    color: inherit;          
+}
+  
+  .btn:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  }
+  
+  .btn-primary {
+    background: black;
+    color: white;
+    border: none;
+  }
+  
+  .form-actions {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }

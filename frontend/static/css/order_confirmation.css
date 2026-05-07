@@ -1,0 +1,239 @@
+/* Order Confirmation Page - Modern Black/White Theme */
+
+.confirmation-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.confirmation-success {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.confirmation-success .success-icon {
+    font-size: 64px;
+    color: #000;
+    margin-bottom: 20px;
+}
+
+.confirmation-success h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.confirmation-success .lead {
+    font-size: 18px;
+    color: #6c757d;
+}
+
+.order-details-card {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.order-details-card h5 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #000;
+}
+
+.detail-row {
+    margin-bottom: 20px;
+}
+
+.detail-row strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.detail-row .value {
+    font-size: 15px;
+    color: #495057;
+}
+
+.detail-row .order-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+}
+
+.status-badge-confirm {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #f8f9fa;
+    color: #000;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.producer-items-card {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 12px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.producer-items-card .producer-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.producer-items-card .producer-header h6 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.producer-items-card .card-body {
+    padding: 20px;
+}
+
+.producer-delivery-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 0 18px;
+}
+
+.producer-delivery-summary-item {
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fafafa;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.producer-delivery-summary-item-wide {
+    grid-column: 1 / -1;
+}
+
+.summary-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.summary-value {
+    color: #222;
+    line-height: 1.5;
+    font-weight: 600;
+}
+
+.items-table {
+    width: 100%;
+    margin: 0;
+}
+
+.items-table thead th {
+    background: #000;
+    color: white;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+}
+
+.items-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-size: 14px;
+}
+
+.items-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.items-table tfoot td {
+    padding: 15px 12px;
+    font-weight: 700;
+    border-top: 2px solid #000;
+    font-size: 15px;
+}
+
+.order-total-card {
+    background: #000;
+    color: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.order-total-card .total-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-total-card h4 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.btn-view-history {
+    background: #000;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    width: 100%;
+    margin-bottom: 10px;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn-view-history:hover {
+    background: #333;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-continue-shopping {
+    background: white;
+    color: #000;
+    border: 1px solid rgba(0,0,0,0.2);
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn-continue-shopping:hover {
+    background: #f8f9fa;
+    color: #000;
+    border-color: #000;
+}
+
+@media (min-width: 768px) {
+    .producer-delivery-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
