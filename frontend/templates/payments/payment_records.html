@@ -3,14 +3,28 @@
 
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+<link rel="stylesheet" href="{% static 'payments/style.css' %}?v=20260507">
 {% endblock %}
 
 {% block title %}Payment Records{% endblock %}
 
 {% block content %}
-<section>
+<section class="payments-shell">
     <h2>Payment Records</h2>
+    <form method="get" class="filter-form">
+        <label class="filter-field">
+            From date
+            <input type="date" name="from_date" value="{{ from_date }}">
+        </label>
+        <label class="filter-field">
+            To date
+            <input type="date" name="to_date" value="{{ to_date }}">
+        </label>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filter</button>
+            <a href="{% url 'payments-records-page' %}" class="btn-secondary">Clear Filter</a>
+        </div>
+    </form>
     <table>
         <thead>
             <tr>

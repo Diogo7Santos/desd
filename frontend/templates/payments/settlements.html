@@ -2,14 +2,34 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'payments/style.css' %}">
+<link rel="stylesheet" href="{% static 'payments/style.css' %}?v=20260507">
 {% endblock %}
 
 {% block title %}Settlements{% endblock %}
 
 {% block content %}
-<section>
+<section class="payments-shell">
     <h2>Weekly Settlements</h2>
+    <form method="get" class="filter-form">
+        <label class="filter-field">
+            Select settlement week
+            <select name="selected_week_start">
+                <option value="">All available weeks</option>
+                {% for week in week_options %}
+                <option value="{{ week.week_start }}" {% if selected_week_start == week.week_start|date:"Y-m-d" %}selected{% endif %}>
+                    {{ week.label }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filter</button>
+            <a href="{% url 'payments-settlements-page' %}" class="btn-secondary">Clear Filter</a>
+        </div>
+    </form>
+    {% if selected_week_label %}
+    <p class="selected-range">Selected week: {{ selected_week_label }}</p>
+    {% endif %}
     <table>
         <thead>
             <tr>

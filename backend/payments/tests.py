@@ -1032,18 +1032,20 @@ class PaymentsWebRBACTests(TestCase):
             paid_at=now,
         )
 
+        week_start = (now - timedelta(days=now.weekday())).date()
+        week_end = week_start + timedelta(days=6)
         SettlementBatch.objects.create(
             producer_reference=str(self.producer.id),
-            week_start=(now - timedelta(days=7)).date(),
-            week_end=now.date(),
+            week_start=week_start,
+            week_end=week_end,
             total_gross=Decimal("20.00"),
             total_commission=Decimal("1.00"),
             total_net=Decimal("19.00"),
         )
         SettlementBatch.objects.create(
             producer_reference="999999",
-            week_start=(now - timedelta(days=7)).date(),
-            week_end=now.date(),
+            week_start=week_start,
+            week_end=week_end,
             total_gross=Decimal("30.00"),
             total_commission=Decimal("1.50"),
             total_net=Decimal("28.50"),
@@ -1099,6 +1101,157 @@ class PaymentsWebRBACTests(TestCase):
             with self.subTest(page=page):
                 response = self.client.get(reverse(page))
                 self.assertEqual(response.status_code, 403)
+
+    def test_dashboard_shows_csv_export_link(self):
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        response = self.client.get(reverse("payments-dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Download Payment Report CSV")
+        self.assertContains(response, reverse("producer-payment-report-csv"))
+
+    def test_settlements_page_uses_week_selector(self):
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        response = self.client.get(reverse("payments-settlements-page"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Select settlement week")
+        self.assertContains(response, "selected_week_start")
+
+    def test_valid_monday_week_filter_scopes_settlements(self):
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        own = SettlementBatch.objects.filter(producer_reference=str(self.producer.id)).first()
+        response = self.client.get(
+            reverse("payments-settlements-page"),
+            {"selected_week_start": own.week_start.isoformat()},
+        )
+        self.assertEqual(response.status_code, 200)
+        settlements = list(response.context["settlements"])
+        self.assertEqual(len(settlements), 1)
+        self.assertEqual(settlements[0].week_start, own.week_start)
+
+    def test_invalid_non_monday_week_filter_is_ignored(self):
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        monday = SettlementBatch.objects.filter(producer_reference=str(self.producer.id)).first().week_start
+        tuesday = monday + timedelta(days=1)
+        response = self.client.get(
+            reverse("payments-settlements-page"),
+            {"selected_week_start": tuesday.isoformat()},
+        )
+        self.assertEqual(response.status_code, 200)
+        settlements = list(response.context["settlements"])
+        self.assertEqual(len(settlements), 1)
+
+    def test_payment_records_date_filter_works_and_remains_scoped(self):
+        old_paid_at = timezone.now() - timedelta(days=40)
+        PaymentRecord.objects.create(
+            order_reference="ORD-WEB-OLD",
+            transaction_reference="TXN-WEB-OLD",
+            producer_reference=str(self.producer.id),
+            customer_reference=str(self.customer.id),
+            gross_amount=Decimal("15.00"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=old_paid_at,
+        )
+
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        start = (timezone.now() - timedelta(days=2)).date().isoformat()
+        end = timezone.now().date().isoformat()
+        response = self.client.get(
+            reverse("payments-records-page"),
+            {"from_date": start, "to_date": end},
+        )
+        self.assertEqual(response.status_code, 200)
+        records = list(response.context["records"])
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].transaction_reference, "TXN-WEB-1")
+
+    def test_commission_page_has_csv_link_with_active_filters(self):
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        response = self.client.get(
+            reverse("payments-report-page"),
+            {"from_date": "2026-05-01", "to_date": "2026-05-15"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse("producer-payment-report-csv") + "?from_date=2026-05-01&to_date=2026-05-15",
+        )
+
+    def test_producer_payment_report_csv_contains_only_own_records(self):
+        own_settled = PaymentRecord.objects.get(transaction_reference="TXN-WEB-1")
+        own_unsettled = PaymentRecord.objects.create(
+            order_reference="ORD-WEB-3",
+            transaction_reference="TXN-WEB-3",
+            producer_reference=str(self.producer.id),
+            customer_reference=str(self.customer.id),
+            gross_amount=Decimal("12.00"),
+            status=PaymentRecord.Status.PENDING,
+            paid_at=None,
+        )
+        settlement = SettlementBatch.objects.filter(producer_reference=str(self.producer.id)).first()
+        settlement.items.create(payment_record=own_settled)
+        own_unsettled.refresh_from_db()
+
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        response = self.client.get(reverse("producer-payment-report-csv"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response["Content-Type"])
+        payload = response.content.decode("utf-8")
+        rows = list(csv.DictReader(io.StringIO(payload)))
+
+        self.assertEqual(len(rows), 2)
+        refs = {r["transaction_reference"] for r in rows}
+        self.assertEqual(refs, {"TXN-WEB-1", "TXN-WEB-3"})
+
+        settled_row = next(r for r in rows if r["transaction_reference"] == "TXN-WEB-1")
+        unsettled_row = next(r for r in rows if r["transaction_reference"] == "TXN-WEB-3")
+        self.assertEqual(settled_row["settlement_status"], "SETTLED")
+        self.assertTrue(settled_row["settlement_batch_id"])
+        self.assertEqual(settled_row["settlement_batch_status"], SettlementBatch.Status.OPEN)
+        self.assertEqual(unsettled_row["settlement_status"], "UNSETTLED")
+        self.assertEqual(unsettled_row["settlement_batch_id"], "")
+        self.assertEqual(unsettled_row["settlement_batch_status"], "")
+
+    def test_producer_payment_report_csv_respects_date_filters(self):
+        old_paid_at = timezone.now() - timedelta(days=45)
+        PaymentRecord.objects.create(
+            order_reference="ORD-WEB-CSV-OLD",
+            transaction_reference="TXN-WEB-CSV-OLD",
+            producer_reference=str(self.producer.id),
+            customer_reference=str(self.customer.id),
+            gross_amount=Decimal("11.00"),
+            status=PaymentRecord.Status.PAID,
+            paid_at=old_paid_at,
+        )
+
+        self.client.login(username=self.producer.username, password="strong-password-123")
+        response = self.client.get(
+            reverse("producer-payment-report-csv"),
+            {
+                "from_date": (timezone.now() - timedelta(days=2)).date().isoformat(),
+                "to_date": timezone.now().date().isoformat(),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.DictReader(io.StringIO(response.content.decode("utf-8"))))
+        refs = {row["transaction_reference"] for row in rows}
+        self.assertIn("TXN-WEB-1", refs)
+        self.assertNotIn("TXN-WEB-CSV-OLD", refs)
+
+    def test_customer_forbidden_from_producer_payment_report_csv(self):
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        response = self.client.get(reverse("producer-payment-report-csv"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_producer_payment_report_csv_is_global(self):
+        self.client.login(username=self.admin.username, password="strong-password-123")
+        response = self.client.get(reverse("producer-payment-report-csv"))
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.DictReader(io.StringIO(response.content.decode("utf-8"))))
+        self.assertEqual(len(rows), 2)
+        refs = {row["transaction_reference"] for row in rows}
+        self.assertIn("TXN-WEB-1", refs)
+        self.assertIn("TXN-WEB-2", refs)
 
 
 class PaymentsApiRBACTests(APITestCase):

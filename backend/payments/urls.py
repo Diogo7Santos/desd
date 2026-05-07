@@ -12,6 +12,7 @@ from .views import (
     commission_report_page,
     payment_records_page,
     payments_dashboard,
+    producer_payment_report_csv,
     settlements_page,
 )
 
@@ -41,6 +42,7 @@ urlpatterns = [
     path("payments/", payments_dashboard, name="payments-dashboard"),
     path("payments/records/", payment_records_page, name="payments-records-page"),
     path("payments/settlements/", settlements_page, name="payments-settlements-page"),
+    path("payments/producer-report.csv", producer_payment_report_csv, name="producer-payment-report-csv"),
     path("payments/reports/commission/", commission_report_page, name="payments-report-page"),
     path("payments/reports/network-commission/", admin_financial_report_page, name="admin-financial-report"),
     path("payments/reports/network-commission.csv", admin_financial_report_csv, name="admin-financial-report-csv"),

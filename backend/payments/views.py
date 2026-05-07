@@ -297,6 +297,18 @@ def _build_financial_report(params):
     }
 
 
+def _normalise_date_window(from_date, to_date):
+    if from_date and to_date and from_date > to_date:
+        return to_date, from_date
+    return from_date, to_date
+
+
+def _date_filters_from_request(request):
+    from_date = _parse_date(request.GET.get("from_date"))
+    to_date = _parse_date(request.GET.get("to_date"))
+    return _normalise_date_window(from_date, to_date)
+
+
 class PaymentRecordListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentRecordSerializer
@@ -567,8 +579,23 @@ def payment_records_page(request):
     if not _payments_access_allowed(request.user):
         return HttpResponseForbidden("Customers cannot access payment pages.")
 
-    records = _payment_records_for_user(request.user).order_by("-created_at")[:50]
-    return render(request, "payments/payment_records.html", {"records": records})
+    from_date, to_date = _date_filters_from_request(request)
+    records = _payment_records_for_user(request.user)
+    if from_date:
+        records = records.filter(paid_at__date__gte=from_date)
+    if to_date:
+        records = records.filter(paid_at__date__lte=to_date)
+
+    records = records.order_by("-created_at")[:50]
+    return render(
+        request,
+        "payments/payment_records.html",
+        {
+            "records": records,
+            "from_date": from_date.isoformat() if from_date else "",
+            "to_date": to_date.isoformat() if to_date else "",
+        },
+    )
 
 
 @login_required
@@ -576,8 +603,34 @@ def settlements_page(request):
     if not _payments_access_allowed(request.user):
         return HttpResponseForbidden("Customers cannot access payment pages.")
 
-    settlements = _settlements_for_user(request.user).order_by("-week_end", "-created_at")[:30]
-    return render(request, "payments/settlements.html", {"settlements": settlements})
+    settlements = _settlements_for_user(request.user).order_by("-week_end", "-created_at")
+    week_values = settlements.values("week_start", "week_end").distinct().order_by("-week_start")
+    week_options = [
+        {
+            "week_start": w["week_start"],
+            "week_end": w["week_end"],
+            "label": f"{w['week_start']} to {w['week_end']}",
+        }
+        for w in week_values
+    ]
+    valid_starts = {w["week_start"] for w in week_options}
+    selected_week_start = _parse_date(request.GET.get("selected_week_start"))
+    selected_week = None
+    if selected_week_start and selected_week_start.weekday() == 0 and selected_week_start in valid_starts:
+        settlements = settlements.filter(week_start=selected_week_start)
+        selected_week = next((w for w in week_options if w["week_start"] == selected_week_start), None)
+
+    settlements = settlements[:30]
+    return render(
+        request,
+        "payments/settlements.html",
+        {
+            "settlements": settlements,
+            "week_options": week_options,
+            "selected_week_start": selected_week_start.isoformat() if selected_week else "",
+            "selected_week_label": selected_week["label"] if selected_week else "",
+        },
+    )
 
 
 @login_required
@@ -586,9 +639,82 @@ def commission_report_page(request):
         return HttpResponseForbidden("Customers cannot access payment pages.")
 
     today = timezone.now().date()
-    month_start = today.replace(day=1)
-    report = _commission_report_for_user(user=request.user, start_date=month_start, end_date=today)
-    return render(request, "payments/commission_report.html", {"report": report})
+    from_date, to_date = _date_filters_from_request(request)
+    if not from_date and not to_date:
+        from_date = today.replace(day=1)
+        to_date = today
+    elif not from_date:
+        from_date = to_date
+    elif not to_date:
+        to_date = today
+
+    report = _commission_report_for_user(user=request.user, start_date=from_date, end_date=to_date)
+    return render(
+        request,
+        "payments/commission_report.html",
+        {
+            "report": report,
+            "from_date": from_date.isoformat() if from_date else "",
+            "to_date": to_date.isoformat() if to_date else "",
+        },
+    )
+
+
+@login_required
+def producer_payment_report_csv(request):
+    if not _payments_access_allowed(request.user):
+        return HttpResponseForbidden("Customers cannot access payment pages.")
+
+    from_date, to_date = _date_filters_from_request(request)
+    records = _payment_records_for_user(request.user).select_related("settlement_item__settlement")
+    if from_date:
+        records = records.filter(paid_at__date__gte=from_date)
+    if to_date:
+        records = records.filter(paid_at__date__lte=to_date)
+    records = records.order_by("-paid_at", "-created_at")
+
+    response = HttpResponse(content_type="text/csv")
+    if _is_producer(request.user):
+        filename = f"producer_payment_report_{request.user.id}.csv"
+    else:
+        filename = "payment_report.csv"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    writer = csv.writer(response)
+
+    writer.writerow(
+        [
+            "order_reference",
+            "transaction_reference",
+            "payment_status",
+            "paid_at",
+            "gross_amount",
+            "commission_amount",
+            "net_amount",
+            "settlement_status",
+            "settlement_batch_id",
+            "settlement_batch_status",
+        ]
+    )
+
+    for record in records:
+        settlement_item = getattr(record, "settlement_item", None)
+        settlement = getattr(settlement_item, "settlement", None) if settlement_item else None
+        writer.writerow(
+            [
+                record.order_reference,
+                record.transaction_reference,
+                record.status,
+                record.paid_at.isoformat() if record.paid_at else "",
+                f"{record.gross_amount:.2f}",
+                f"{record.commission_amount:.2f}",
+                f"{record.net_amount:.2f}",
+                "SETTLED" if settlement else "UNSETTLED",
+                settlement.id if settlement else "",
+                settlement.status if settlement else "",
+            ]
+        )
+
+    return response
 
 
 @admin_required
