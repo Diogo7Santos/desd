@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from .models import ProducerProfile, CustomerProfile, Address
 from .postcodes import (
     clean_uk_postcode,
+    POSTCODE_ERROR_MESSAGE,
 )
 
 User = get_user_model()

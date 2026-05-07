@@ -827,7 +827,7 @@ class BusinessOrderFlowTests(TestCase):
         order = Order.objects.get(customer=self.community_user)
         confirm = self.client.get(reverse("orders:order_confirmation", kwargs={"order_id": order.id}))
         self.assertContains(confirm, "Producer Coordination Contacts")
-        self.assertContains(confirm, "St. Mary's School")
+        self.assertContains(confirm, "St. Mary&#x27;s School")
         self.assertContains(confirm, "Jane Smith")
         self.assertContains(confirm, "Clifton Dairy")
         self.assertEqual(PaymentRecord.objects.filter(order_reference=order.order_number).count(), 3)

@@ -33,7 +33,7 @@ class TC003ProductCreateTest(TestCase):
 
         # If your project uses a role field:
         if hasattr(self.producer, "role"):
-            self.producer.role = "producer"
+            self.producer.role = User.Role.PRODUCER
             self.producer.save()
 
         # If your project uses boolean flag:
@@ -62,11 +62,13 @@ class TC003ProductCreateTest(TestCase):
             {
                 "name": "Organic Free Range Eggs",
                 "category": Product.Category.DAIRY_EGGS,
+                "organic_status": Product.OrganicStatus.NON_CERTIFIED,
                 "description": "Fresh organic eggs from free-range hens",
                 "price": "3.50",
                 "unit": "Dozen",
                 "availability": Product.Availability.AVAILABLE,
                 "stock_quantity": 50,
+                "low_stock_threshold": 10,
                 "allergens": "eggs",
                 "harvest_date": date.today(),
             },
@@ -143,11 +145,13 @@ class TC003ProductCreateTest(TestCase):
             {
                 "name": "Zero Stock Item",
                 "category": Product.Category.VEGETABLES,
+                "organic_status": Product.OrganicStatus.NON_CERTIFIED,
                 "description": "Invalid zero stock",
                 "price": "1.00",
                 "unit": "kg",
                 "availability": Product.Availability.AVAILABLE,
                 "stock_quantity": 0,
+                "low_stock_threshold": 10,
             },
         )
 
@@ -160,7 +164,7 @@ class TC003ProductCreateTest(TestCase):
             password="StrongPassword123!",
         )
         if hasattr(other_producer, "role"):
-            other_producer.role = "producer"
+            other_producer.role = User.Role.PRODUCER
             other_producer.save()
         if hasattr(other_producer, "is_producer"):
             other_producer.is_producer = True
@@ -185,11 +189,13 @@ class TC003ProductCreateTest(TestCase):
             {
                 "name": "Attempted overwrite",
                 "category": Product.Category.VEGETABLES,
+                "organic_status": Product.OrganicStatus.NON_CERTIFIED,
                 "description": "Invalid attempt",
                 "price": "9.99",
                 "unit": "kg",
                 "availability": Product.Availability.AVAILABLE,
                 "stock_quantity": 20,
+                "low_stock_threshold": 10,
                 "allergens": "none",
                 "harvest_date": date.today(),
             },

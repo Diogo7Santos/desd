@@ -207,14 +207,17 @@ class AccountsTestCases(TestCase):
         self.assertTrue(mocked_warning.called)
 
     def test_tc022_bruteforce_lockout_and_success_resets_counter(self):
-        self.create_customer_user(email="lockout@example.com", password="StrongPass123!")
+        email = "lockout@example.com"
+        self.create_customer_user(email=email, password="StrongPass123!")
+        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
+        cache.delete(cache_key)
 
         # Prime failed attempts and then recover with a successful login.
         for _ in range(2):
             self.client.post(
                 reverse("login"),
                 data={
-                    "email": "lockout@example.com",
+                    "email": email,
                     "password": "WrongPassword999!",
                     "role": User.Role.CUSTOMER,
                 },
@@ -223,7 +226,7 @@ class AccountsTestCases(TestCase):
         success = self.client.post(
             reverse("login"),
             data={
-                "email": "lockout@example.com",
+                "email": email,
                 "password": "StrongPass123!",
                 "role": User.Role.CUSTOMER,
             },
@@ -237,7 +240,7 @@ class AccountsTestCases(TestCase):
             self.client.post(
                 reverse("login"),
                 data={
-                    "email": "lockout@example.com",
+                    "email": email,
                     "password": "WrongPassword999!",
                     "role": User.Role.CUSTOMER,
                 },
@@ -246,7 +249,7 @@ class AccountsTestCases(TestCase):
         locked = self.client.post(
             reverse("login"),
             data={
-                "email": "lockout@example.com",
+                "email": email,
                 "password": "StrongPass123!",
                 "role": User.Role.CUSTOMER,
             },
@@ -257,6 +260,8 @@ class AccountsTestCases(TestCase):
     def test_tc022_failed_login_attempts_increment_session_and_cache_counters(self):
         email = "counter@example.com"
         self.create_customer_user(email=email, password="StrongPass123!")
+        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
+        cache.delete(cache_key)
 
         self.client.post(
             reverse("login"),
@@ -268,7 +273,6 @@ class AccountsTestCases(TestCase):
             follow=True,
         )
         self.assertEqual(self.client.session.get("failed_login_attempts"), 1)
-        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
         self.assertEqual(int(cache.get(cache_key, 0)), 1)
 
         self.client.post(
@@ -286,6 +290,8 @@ class AccountsTestCases(TestCase):
     def test_tc022_successful_login_resets_failed_login_counters(self):
         email = "reset@example.com"
         self.create_customer_user(email=email, password="StrongPass123!")
+        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
+        cache.delete(cache_key)
 
         self.client.post(
             reverse("login"),
@@ -297,7 +303,6 @@ class AccountsTestCases(TestCase):
             follow=True,
         )
         self.assertEqual(self.client.session.get("failed_login_attempts"), 1)
-        cache_key = account_views._cache_lockout_key(email, "127.0.0.1")
         self.assertEqual(int(cache.get(cache_key, 0)), 1)
 
         self.client.post(
