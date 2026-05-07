@@ -1,0 +1,126 @@
+.review-form-container {
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 0 16px;
+}
+
+.review-form-card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.review-form-header {
+    padding: 28px 30px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.review-form-header h1 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+}
+
+.review-form-header p {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.68);
+    line-height: 1.5;
+}
+
+.review-form-context {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    padding: 18px 30px;
+    background: #f7f8f3;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.review-context-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.review-form-body {
+    padding: 26px 30px 30px;
+}
+
+.review-form-field {
+    margin-bottom: 20px;
+}
+
+.review-form-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.review-form-field .form-control {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    border-radius: 12px;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.review-form-field textarea.form-control {
+    resize: vertical;
+}
+
+.review-form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.review-form-check label {
+    margin: 0;
+}
+
+.review-form-errors,
+.review-field-error {
+    color: #9f1239;
+    font-size: 0.92rem;
+}
+
+.review-form-errors {
+    margin-bottom: 18px;
+}
+
+.review-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.review-submit-btn,
+.review-cancel-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 18px;
+    border-radius: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.review-submit-btn {
+    border: none;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+}
+
+.review-cancel-link {
+    background: #f0f0f0;
+    color: #111;
+}

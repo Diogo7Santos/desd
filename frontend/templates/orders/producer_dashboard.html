@@ -37,9 +37,12 @@
                         <span class="badge bg-success-subtle text-success-emphasis border">Payment: {{ order_data.payment_status }}</span>
                     </div>
                 </div>
-                <span class="status-badge-large status-{{ order_data.order.status|lower }}">
-                    {{ order_data.order.get_status_display }}
-                </span>
+                <div>
+                    <small class="text-muted d-block mb-1">Your Items Status:</small>
+                    <span class="status-badge-large status-{{ order_data.items.0.status|lower }}">
+                        {{ order_data.items.0.get_status_display }}
+                    </span>
+                </div>
             </div>
         </div>
         <div class="order-body">
@@ -49,11 +52,29 @@
                         <h6 class="mb-3"><i class="bi bi-person-circle"></i> Customer Information</h6>
                         <div class="info-row">
                             <i class="bi bi-person info-icon"></i>
-                            <strong>{{ order_data.order.customer.username }}</strong>
+                            <strong>{{ order_data.customer_summary.display_name }}</strong>
                         </div>
+                        {% if order_data.customer_summary.is_business_customer %}
+                        <div class="info-row">
+                            <i class="bi bi-building info-icon"></i>
+                            <span>{{ order_data.customer_summary.customer_type_display }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order_data.customer_summary.contact_person %}
+                        <div class="info-row">
+                            <i class="bi bi-person-badge info-icon"></i>
+                            <span>Contact: {{ order_data.customer_summary.contact_person }}</span>
+                        </div>
+                        {% endif %}
+                        {% if order_data.customer_summary.email %}
+                        <div class="info-row">
+                            <i class="bi bi-envelope info-icon"></i>
+                            <span>{{ order_data.customer_summary.email }}</span>
+                        </div>
+                        {% endif %}
                         <div class="info-row">
                             <i class="bi bi-calendar-check info-icon"></i>
-                            <span>Delivery: {{ order_data.order.delivery_date|date:"F d, Y" }}</span>
+                            <span>Requested delivery: {{ order_data.delivery_date|date:"F d, Y" }}</span>
                         </div>
                     </div>
                 </div>
@@ -72,9 +93,27 @@
                 </div>
             </div>
 
+            <div class="producer-delivery-panel">
+                <div class="producer-delivery-panel-header">
+                    <i class="bi bi-truck"></i> Your delivery details
+                </div>
+                <div class="producer-delivery-panel-body">
+                    <div class="producer-delivery-meta">
+                        <span class="producer-delivery-label">Requested date</span>
+                        <strong>{{ order_data.delivery_date|date:"F d, Y" }}</strong>
+                    </div>
+                    {% if order_data.producer_delivery_notes %}
+                    <div class="producer-delivery-notes">
+                        <span class="producer-delivery-label">Customer note for you</span>
+                        <p>{{ order_data.producer_delivery_notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             {% if order_data.order.delivery_instructions %}
             <div class="alert alert-warning mb-3">
-                <strong><i class="bi bi-info-circle"></i> Delivery Instructions:</strong> {{ order_data.order.delivery_instructions }}
+                <strong><i class="bi bi-info-circle"></i> Overall coordination note:</strong> {{ order_data.order.delivery_instructions }}
             </div>
             {% endif %}
 
@@ -93,15 +132,15 @@
                     <tr>
                         <td><strong>{{ item.product_name }}</strong></td>
                         <td>{{ item.quantity }}</td>
-                        <td>£{{ item.unit_price }}</td>
-                        <td class="text-end"><strong>£{{ item.subtotal }}</strong></td>
+                        <td>&pound;{{ item.unit_price }}</td>
+                        <td class="text-end"><strong>&pound;{{ item.subtotal }}</strong></td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-end"><strong>Your Total Earnings:</strong></td>
-                        <td class="text-end"><strong class="text-success">£{{ order_data.subtotal }}</strong></td>
+                        <td class="text-end"><strong class="text-success">&pound;{{ order_data.subtotal }}</strong></td>
                     </tr>
                 </tfoot>
             </table>
@@ -116,10 +155,10 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold">New Status:</label>
                             <select name="status" class="form-select form-select-lg">
-                                <option value="PENDING" {% if order_data.order.status == 'PENDING' %}selected{% endif %}>⏳ Pending</option>
-                                <option value="CONFIRMED" {% if order_data.order.status == 'CONFIRMED' %}selected{% endif %}>✅ Confirmed</option>
-                                <option value="READY" {% if order_data.order.status == 'READY' %}selected{% endif %}>📦 Ready for Delivery</option>
-                                <option value="DELIVERED" {% if order_data.order.status == 'DELIVERED' %}selected{% endif %}>🚚 Delivered</option>
+                                <option value="PENDING" {% if order_data.items.0.status == 'PENDING' %}selected{% endif %}>Pending</option>
+                                <option value="CONFIRMED" {% if order_data.items.0.status == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                                <option value="READY" {% if order_data.items.0.status == 'READY' %}selected{% endif %}>Ready for Delivery</option>
+                                <option value="DELIVERED" {% if order_data.items.0.status == 'DELIVERED' %}selected{% endif %}>Delivered</option>
                             </select>
                         </div>
                         <div class="col-md-8">

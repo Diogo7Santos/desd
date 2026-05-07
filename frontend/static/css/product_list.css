@@ -146,13 +146,55 @@
     flex-wrap: wrap;
   }
   
-  .badge {
+.badge {
     padding: 6px 10px;
     border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
     background: rgba(0,0,0,0.05);
   }
+
+.food-miles-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+.food-miles-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.food-miles-low {
+  background: #e8f5e9;
+  color: #256029;
+}
+
+.food-miles-medium {
+  background: #fff5db;
+  color: #8a5a00;
+}
+
+.food-miles-high {
+  background: #fdecea;
+  color: #8b2f2f;
+}
+
+.food-miles-unavailable {
+  background: #f3f4f6;
+  color: #60646c;
+}
+
+.food-miles-note {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.65);
+}
   
   @media (min-width: 768px) {
     .product-card { grid-column: span 6; }

@@ -31,6 +31,7 @@ class ProducerProfile(models.Model):
     contact_name = models.CharField(max_length=255)
     business_address = models.CharField(max_length=255)
     postcode = models.CharField(max_length=20)
+    lead_time_days = models.PositiveSmallIntegerField(default=2)
 
     def __str__(self):
         return self.business_name

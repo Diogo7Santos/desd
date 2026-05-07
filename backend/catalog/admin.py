@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import Product
+from .models import Product, ProductReview
 
 
 @admin.register(Product)
@@ -58,5 +58,37 @@ class ProductAdmin(admin.ModelAdmin):
         ),
         ("Food Information", {"fields": ("allergens", "harvest_date")}),
         ("Media", {"fields": ("image",)}),
+        ("Timestamps", {"fields": ("created_at", "updated_at")}),
+    )
+
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "product",
+        "customer",
+        "rating",
+        "anonymous",
+        "is_visible",
+        "created_at",
+        "responded_at",
+    )
+    list_filter = ("rating", "anonymous", "is_visible", "created_at", "responded_at")
+    search_fields = (
+        "product__name",
+        "customer__username",
+        "customer__email",
+        "title",
+        "review_text",
+        "producer_response",
+    )
+    readonly_fields = ("created_at", "updated_at", "responded_at")
+    ordering = ("-created_at",)
+
+    fieldsets = (
+        ("Links", {"fields": ("product", "customer", "order_item")}),
+        ("Review", {"fields": ("rating", "title", "review_text", "anonymous", "is_visible")}),
+        ("Producer Response", {"fields": ("producer_response", "responded_at")}),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )

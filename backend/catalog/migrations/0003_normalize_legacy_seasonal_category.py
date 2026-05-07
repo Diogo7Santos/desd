@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("catalog", "0002_product_organic_status_and_more"),
+        ("catalog", "0002_productreview"),
     ]
 
     operations = [

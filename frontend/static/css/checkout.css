@@ -95,6 +95,102 @@
     font-size: 0.85rem;
 }
 
+.producer-delivery-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.producer-delivery-intro {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: #f7f7f7;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.producer-delivery-intro h4 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.producer-delivery-intro p {
+    margin: 0;
+    color: #555;
+    line-height: 1.5;
+    font-size: 0.92rem;
+}
+
+.producer-delivery-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    padding: 18px;
+    background: #fcfcfc;
+}
+
+.producer-delivery-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.producer-delivery-card-header h5 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.producer-delivery-card-header p {
+    margin: 0;
+    color: #666;
+    font-size: 0.88rem;
+}
+
+.producer-lead-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #eef6ee;
+    border: 1px solid #cfe5cf;
+    color: #1f5f1f;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.producer-item-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.producer-item-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #222;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.producer-delivery-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.producer-note-input {
+    min-height: 96px;
+}
+
 .checkout-actions {
     display: flex;
     flex-direction: column;
@@ -178,6 +274,11 @@
 @media (min-width: 992px) {
     .checkout-layout {
         grid-template-columns: minmax(0, 2fr) minmax(280px, 320px);
+        align-items: start;
+    }
+
+    .producer-delivery-grid {
+        grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
         align-items: start;
     }
 

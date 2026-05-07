@@ -8,9 +8,16 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.models import Address, CustomerProfile, ProducerProfile
 from cart.models import Cart, CartItem
 from catalog.models import Product
-from orders.models import Order, OrderItem
+from orders.models import (
+    Order,
+    OrderItem,
+    RecurringOrder,
+    RecurringOrderItem,
+    RecurringOrderItemOverride,
+)
 from payments.models import PaymentRecord
 
 User = get_user_model()
@@ -182,6 +189,70 @@ class OrderStripeIntegrationTests(TestCase):
         self.assertSetEqual(set(by_producer.keys()), {str(self.producer_a.id), str(self.producer_b.id)})
         self.assertEqual(by_producer[str(self.producer_a.id)].gross_amount, Decimal("9.00"))
         self.assertEqual(by_producer[str(self.producer_b.id)].gross_amount, Decimal("8.00"))
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_multi_producer_checkout_stores_per_producer_delivery_dates_and_notes(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_multi_schedule_1",
+            url="https://checkout.stripe.com/pay/cs_test_multi_schedule_1",
+            payment_intent="pi_test_multi_schedule_1",
+        )
+        ProducerProfile.objects.create(
+            user=self.producer_a,
+            business_name="Producer A Farm",
+            contact_name="Alice Grower",
+            business_address="1 Orchard Lane",
+            postcode="BS1 4DJ",
+            lead_time_days=2,
+        )
+        ProducerProfile.objects.create(
+            user=self.producer_b,
+            business_name="Producer B Dairy",
+            contact_name="Ben Farmer",
+            business_address="2 Valley Road",
+            postcode="BS3 2AA",
+            lead_time_days=5,
+        )
+
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.customer)
+        CartItem.objects.create(cart=cart, product=self.product_a, quantity=2)
+        CartItem.objects.create(cart=cart, product=self.product_b, quantity=1)
+
+        producer_a_date = timezone.localdate() + timedelta(days=3)
+        producer_b_date = timezone.localdate() + timedelta(days=6)
+        response = self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "25 Delivery Square, Bristol",
+                "delivery_postcode": "BS1 2AB",
+                "delivery_instructions": "Reception will coordinate separate arrivals.",
+                f"producer_{self.producer_a.id}_delivery_date": producer_a_date.isoformat(),
+                f"producer_{self.producer_a.id}_delivery_notes": "Call when arriving at the front gate.",
+                f"producer_{self.producer_b.id}_delivery_date": producer_b_date.isoformat(),
+                f"producer_{self.producer_b.id}_delivery_notes": "Unload beside the cold-storage entrance.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("checkout.stripe.com", response.url)
+
+        order = Order.objects.get(customer=self.customer)
+        self.assertEqual(order.delivery_date, producer_a_date)
+        item_a = OrderItem.objects.get(order=order, producer=self.producer_a)
+        item_b = OrderItem.objects.get(order=order, producer=self.producer_b)
+        self.assertEqual(item_a.producer_delivery_date, producer_a_date)
+        self.assertEqual(item_b.producer_delivery_date, producer_b_date)
+        self.assertEqual(item_a.producer_delivery_notes, "Call when arriving at the front gate.")
+        self.assertEqual(item_b.producer_delivery_notes, "Unload beside the cold-storage entrance.")
+
+        grouped = order.get_items_by_producer()
+        self.assertEqual(grouped[self.producer_a]["delivery_date"], producer_a_date)
+        self.assertEqual(grouped[self.producer_b]["delivery_date"], producer_b_date)
+        self.assertEqual(
+            grouped[self.producer_b]["delivery_notes"],
+            "Unload beside the cold-storage entrance.",
+        )
 
     @patch("payments.stripe_gateway.stripe.checkout.Session.create")
     def test_order_items_grouped_by_producer_breakdown(self, stripe_create):
@@ -381,6 +452,53 @@ class OrderStripeIntegrationTests(TestCase):
         response = self.client.post(reverse("orders:reorder", kwargs={"order_id": order.id}), follow=True)
         self.assertEqual(response.status_code, 404)
 
+    def test_customer_order_detail_shows_latest_status_note_only(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            delivery_address="9 Update Lane, Bristol",
+            delivery_postcode="BS1 1AA",
+            delivery_date=(timezone.now() + timedelta(days=3)).date(),
+            delivery_instructions="",
+            total_amount=Decimal("6.00"),
+            status=Order.Status.PENDING,
+        )
+        OrderItem.objects.create(
+            order=order,
+            product=self.product_a,
+            producer=self.producer_a,
+            product_name=self.product_a.name,
+            unit_price=self.product_a.price,
+            quantity=2,
+            status=Order.Status.PENDING,
+        )
+
+        self.client.login(username=self.producer_a.username, password="strong-password-123")
+        first_update_response = self.client.post(
+            reverse("orders:update_status", kwargs={"order_id": order.id}),
+            {
+                "status": Order.Status.CONFIRMED,
+                "notes": "Initial scheduling note.",
+            },
+        )
+        self.assertEqual(first_update_response.status_code, 302)
+        second_update_response = self.client.post(
+            reverse("orders:update_status", kwargs={"order_id": order.id}),
+            {
+                "status": Order.Status.READY,
+                "notes": "Delivery van will arrive after 10am.",
+            },
+        )
+        self.assertEqual(second_update_response.status_code, 302)
+
+        self.client.logout()
+        self.client.login(username=self.customer.username, password="strong-password-123")
+        detail_response = self.client.get(reverse("orders:order_detail", kwargs={"order_id": order.id}))
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, "Latest Status Update")
+        self.assertContains(detail_response, "Delivery van will arrive after 10am.")
+        self.assertNotContains(detail_response, "Initial scheduling note.")
+        self.assertContains(detail_response, self.producer_a.username)
+
     @patch("payments.stripe_gateway.stripe.checkout.Session.create")
     def test_producer_dashboard_excludes_pending_payment_orders(self, stripe_create):
         stripe_create.return_value = SimpleNamespace(
@@ -561,3 +679,284 @@ class OrderStripeIntegrationTests(TestCase):
         self.assertContains(order_detail, "Payment")
         self.assertContains(order_detail, "PAID")
         self.assertNotContains(order_detail, "Pending Payment")
+
+class BusinessOrderFlowTests(TestCase):
+    def setUp(self):
+        self.restaurant_user = User.objects.create_user(
+            username="restaurant@example.com",
+            email="restaurant@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+        restaurant_address = Address.objects.create(
+            user=self.restaurant_user,
+            line_1="10 Clifton Road",
+            line_2="",
+            city="Bristol",
+            postcode="BS8 1AB",
+        )
+        CustomerProfile.objects.create(
+            user=self.restaurant_user,
+            customer_type_id=CustomerProfile.CustomerType.RESTAURANT,
+            address=restaurant_address,
+            organisation_name="The Clifton Kitchen",
+            contact_person="Restaurant Owner",
+            default_delivery_instructions="Deliver to rear kitchen door",
+            is_business_verified=True,
+        )
+
+        self.community_user = User.objects.create_user(
+            username="community@example.com",
+            email="community@example.com",
+            password="strong-password-123",
+            role="CUSTOMER",
+        )
+        community_address = Address.objects.create(
+            user=self.community_user,
+            line_1="45 School Lane",
+            line_2="",
+            city="Bristol",
+            postcode="BS1 5JG",
+        )
+        CustomerProfile.objects.create(
+            user=self.community_user,
+            customer_type_id=CustomerProfile.CustomerType.COMMUNITY_GROUP,
+            address=community_address,
+            organisation_name="St. Mary's School",
+            contact_person="Kitchen Manager",
+            default_delivery_instructions="Delivery to kitchen entrance",
+            is_charity_or_education=True,
+        )
+
+        self.producer_a = User.objects.create_user(
+            username="farm-a@example.com",
+            email="farm-a@example.com",
+            password="strong-password-123",
+            role="PRODUCER",
+        )
+        ProducerProfile.objects.create(
+            user=self.producer_a,
+            business_name="Bristol Valley Farm",
+            contact_name="Jane Smith",
+            business_address="1 Farm Lane",
+            postcode="BS1 4DJ",
+        )
+        self.producer_b = User.objects.create_user(
+            username="farm-b@example.com",
+            email="farm-b@example.com",
+            password="strong-password-123",
+            role="PRODUCER",
+        )
+        ProducerProfile.objects.create(
+            user=self.producer_b,
+            business_name="Clifton Dairy",
+            contact_name="Mark Lewis",
+            business_address="2 Milk Yard",
+            postcode="BS3 2AA",
+        )
+        self.producer_c = User.objects.create_user(
+            username="farm-c@example.com",
+            email="farm-c@example.com",
+            password="strong-password-123",
+            role="PRODUCER",
+        )
+        ProducerProfile.objects.create(
+            user=self.producer_c,
+            business_name="Harbourside Bakery",
+            contact_name="Sofia Reed",
+            business_address="3 Bread Wharf",
+            postcode="BS2 9ZZ",
+        )
+
+        self.product_potatoes = Product.objects.create(
+            producer=self.producer_a,
+            name="Stored Potatoes",
+            category=Product.Category.VEGETABLES,
+            description="Bulk potatoes",
+            price=Decimal("1.80"),
+            unit="kg",
+            stock_quantity=120,
+            availability=Product.Availability.AVAILABLE,
+        )
+        self.product_milk = Product.objects.create(
+            producer=self.producer_b,
+            name="Whole Milk",
+            category=Product.Category.DAIRY_EGGS,
+            description="Fresh milk",
+            price=Decimal("2.40"),
+            unit="litre",
+            stock_quantity=80,
+            availability=Product.Availability.AVAILABLE,
+        )
+        self.product_carrots = Product.objects.create(
+            producer=self.producer_c,
+            name="Organic Carrots",
+            category=Product.Category.VEGETABLES,
+            description="Catering carrots",
+            price=Decimal("1.60"),
+            unit="kg",
+            stock_quantity=90,
+            availability=Product.Availability.AVAILABLE,
+        )
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_tc017_community_group_bulk_order_confirmation_includes_producer_contacts(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_tc017",
+            url="https://checkout.stripe.com/pay/cs_test_tc017",
+            payment_intent="pi_test_tc017",
+        )
+        self.client.login(username=self.community_user.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.community_user)
+        CartItem.objects.create(cart=cart, product=self.product_potatoes, quantity=50)
+        CartItem.objects.create(cart=cart, product=self.product_milk, quantity=30)
+        CartItem.objects.create(cart=cart, product=self.product_carrots, quantity=20)
+
+        delivery_date = (timezone.now() + timedelta(days=4)).date().isoformat()
+        response = self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "45 School Lane, Bristol",
+                "delivery_postcode": "BS1 5JG",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "Delivery to kitchen entrance, contact kitchen manager",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        order = Order.objects.get(customer=self.community_user)
+        confirm = self.client.get(reverse("orders:order_confirmation", kwargs={"order_id": order.id}))
+        self.assertContains(confirm, "Producer Coordination Contacts")
+        self.assertContains(confirm, "St. Mary's School")
+        self.assertContains(confirm, "Jane Smith")
+        self.assertContains(confirm, "Clifton Dairy")
+        self.assertEqual(PaymentRecord.objects.filter(order_reference=order.order_number).count(), 3)
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_tc018_restaurant_checkout_can_create_recurring_order_template(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_tc018_create",
+            url="https://checkout.stripe.com/pay/cs_test_tc018_create",
+            payment_intent="pi_test_tc018_create",
+        )
+        self.client.login(username=self.restaurant_user.username, password="strong-password-123")
+        cart = Cart.objects.create(user=self.restaurant_user)
+        CartItem.objects.create(cart=cart, product=self.product_potatoes, quantity=10)
+        CartItem.objects.create(cart=cart, product=self.product_milk, quantity=12)
+        CartItem.objects.create(cart=cart, product=self.product_carrots, quantity=8)
+
+        delivery_date = (timezone.now() + timedelta(days=5)).date().isoformat()
+        response = self.client.post(
+            reverse("orders:place_order"),
+            {
+                "delivery_address": "10 Clifton Road, Bristol",
+                "delivery_postcode": "BS8 1AB",
+                "delivery_date": delivery_date,
+                "delivery_instructions": "Deliver to rear kitchen door",
+                "make_recurring": "on",
+                "recurring_name": "Weekly Kitchen Staples",
+                "recurrence_interval": RecurringOrder.Interval.WEEKLY,
+                "order_weekday": "0",
+                "delivery_weekday": "2",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        recurring_order = RecurringOrder.objects.get(customer=self.restaurant_user)
+        self.assertEqual(recurring_order.template_name, "Weekly Kitchen Staples")
+        self.assertEqual(recurring_order.recurrence_interval, RecurringOrder.Interval.WEEKLY)
+        self.assertEqual(recurring_order.order_weekday, 0)
+        self.assertEqual(recurring_order.delivery_weekday, 2)
+        self.assertEqual(recurring_order.items.count(), 3)
+
+    def test_tc018_next_scheduled_quantity_override_does_not_change_template(self):
+        recurring_order = RecurringOrder.objects.create(
+            customer=self.restaurant_user,
+            template_name="Weekly Kitchen Staples",
+            recurrence_interval=RecurringOrder.Interval.WEEKLY,
+            order_weekday=0,
+            delivery_weekday=2,
+            delivery_address="10 Clifton Road, Bristol",
+            delivery_postcode="BS8 1AB",
+            delivery_instructions="Deliver to rear kitchen door",
+            next_order_date=(timezone.now() + timedelta(days=5)).date(),
+            next_delivery_date=(timezone.now() + timedelta(days=7)).date(),
+        )
+        recurring_item = RecurringOrderItem.objects.create(
+            recurring_order=recurring_order,
+            product=self.product_potatoes,
+            producer=self.producer_a,
+            product_name=self.product_potatoes.name,
+            unit_price=self.product_potatoes.price,
+            quantity=10,
+        )
+
+        self.client.login(username=self.restaurant_user.username, password="strong-password-123")
+        response = self.client.post(
+            reverse("orders:update_recurring_order", kwargs={"recurring_order_id": recurring_order.id}),
+            {
+                "template_name": recurring_order.template_name,
+                f"quantity_{recurring_item.id}": "14",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        recurring_item.refresh_from_db()
+        self.assertEqual(recurring_item.quantity, 10)
+        override = RecurringOrderItemOverride.objects.get(recurring_item=recurring_item)
+        self.assertEqual(override.quantity, 14)
+        self.assertContains(response, "Next scheduled order updated")
+
+    @patch("payments.stripe_gateway.stripe.checkout.Session.create")
+    def test_tc018_checkout_recurring_order_advances_schedule_and_uses_override_quantity(self, stripe_create):
+        stripe_create.return_value = SimpleNamespace(
+            id="cs_test_tc018_checkout",
+            url="https://checkout.stripe.com/pay/cs_test_tc018_checkout",
+            payment_intent="pi_test_tc018_checkout",
+        )
+        next_order_date = (timezone.now() + timedelta(days=5)).date()
+        next_delivery_date = next_order_date + timedelta(days=2)
+        recurring_order = RecurringOrder.objects.create(
+            customer=self.restaurant_user,
+            template_name="Weekly Kitchen Staples",
+            recurrence_interval=RecurringOrder.Interval.WEEKLY,
+            order_weekday=0,
+            delivery_weekday=2,
+            delivery_address="10 Clifton Road, Bristol",
+            delivery_postcode="BS8 1AB",
+            delivery_instructions="Deliver to rear kitchen door",
+            next_order_date=next_order_date,
+            next_delivery_date=next_delivery_date,
+        )
+        recurring_item = RecurringOrderItem.objects.create(
+            recurring_order=recurring_order,
+            product=self.product_potatoes,
+            producer=self.producer_a,
+            product_name=self.product_potatoes.name,
+            unit_price=self.product_potatoes.price,
+            quantity=10,
+        )
+        RecurringOrderItemOverride.objects.create(
+            recurring_item=recurring_item,
+            scheduled_order_date=next_order_date,
+            quantity=13,
+        )
+
+        self.client.login(username=self.restaurant_user.username, password="strong-password-123")
+        response = self.client.post(
+            reverse("orders:checkout_recurring_order", kwargs={"recurring_order_id": recurring_order.id}),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        order = Order.objects.get(customer=self.restaurant_user)
+        order_item = OrderItem.objects.get(order=order)
+        self.assertEqual(order_item.quantity, 13)
+        recurring_order.refresh_from_db()
+        self.assertEqual(recurring_order.next_order_date, next_order_date + timedelta(days=7))
+        self.assertFalse(
+            RecurringOrderItemOverride.objects.filter(
+                recurring_item=recurring_item,
+                scheduled_order_date=next_order_date,
+            ).exists()
+        )

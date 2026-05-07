@@ -17,7 +17,14 @@
     {% if producer_count > 1 %}
         <div class="checkout-info-banner">
             <strong>Multi-Vendor Order:</strong>
-            Your order contains items from {{ producer_count }} producers. Each producer will deliver separately according to their schedule.
+            Your order contains items from {{ producer_count }} producers. Each producer can deliver on a different date based on their lead time.
+        </div>
+    {% endif %}
+
+    {% if is_community_group_order %}
+        <div class="checkout-info-banner">
+            <strong>Community Group Order:</strong>
+            Larger multi-producer orders are supported here. Use the delivery notes below to tell producers how to coordinate your drop-off.
         </div>
     {% endif %}
 
@@ -55,6 +62,7 @@
                             >
                         </div>
 
+                        {% if producer_count == 1 %}
                         <div class="form-group">
                             <label for="delivery_date">Delivery Date *</label>
                             <input
@@ -66,24 +74,143 @@
                                 required
                             >
                             <small class="form-help">
-                                Minimum 48 hours notice required. Earliest delivery: {{ min_delivery_date }}
+                                Minimum 48 hours notice required. Earliest delivery: {{ min_delivery_date|date:"F d, Y" }}
                             </small>
                         </div>
+                        {% else %}
+                        <div class="producer-delivery-group">
+                            <div class="producer-delivery-intro">
+                                <h4>Choose Delivery Details for Each Producer</h4>
+                                <p>
+                                    Multi-producer orders can have different delivery dates. Choose the requested date for each producer and add separate notes where needed.
+                                </p>
+                            </div>
+
+                            {% for section in producer_delivery_sections %}
+                            <div class="producer-delivery-card">
+                                <div class="producer-delivery-card-header">
+                                    <div>
+                                        <h5>{{ section.business_name }}</h5>
+                                        <p>Contact: {{ section.contact_name }}</p>
+                                    </div>
+                                    <span class="producer-lead-chip">
+                                        {{ section.lead_time_days }} day{{ section.lead_time_days|pluralize }} lead time
+                                    </span>
+                                </div>
+
+                                <div class="producer-item-list">
+                                    {% for item in section.items %}
+                                    <span class="producer-item-pill">
+                                        {{ item.quantity }}x {{ item.product.name }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="producer-delivery-grid">
+                                    <div class="form-group">
+                                        <label for="{{ section.date_field_name }}">Requested Delivery Date *</label>
+                                        <input
+                                            type="date"
+                                            name="{{ section.date_field_name }}"
+                                            id="{{ section.date_field_name }}"
+                                            class="checkout-input"
+                                            min="{{ section.earliest_delivery_date_input }}"
+                                            required
+                                        >
+                                        <small class="form-help">
+                                            Earliest available date: {{ section.earliest_delivery_date|date:"F d, Y" }}
+                                        </small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="{{ section.notes_field_name }}">Producer Delivery Note (Optional)</label>
+                                        <textarea
+                                            name="{{ section.notes_field_name }}"
+                                            id="{{ section.notes_field_name }}"
+                                            class="checkout-input checkout-textarea producer-note-input"
+                                            rows="3"
+                                            placeholder="e.g., Call the site manager, deliver after 9am, use the side gate"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
 
                         <div class="form-group">
-                            <label for="delivery_instructions">Delivery Instructions (Optional)</label>
+                            <label for="delivery_instructions">
+                                {% if producer_count > 1 %}
+                                Overall Delivery Coordination Notes (Optional)
+                                {% else %}
+                                Delivery Instructions (Optional)
+                                {% endif %}
+                            </label>
                             <textarea
                                 name="delivery_instructions"
                                 id="delivery_instructions"
                                 class="checkout-input checkout-textarea"
                                 rows="2"
-                                placeholder="e.g., Leave at side door, call on arrival"
-                            ></textarea>
+                                placeholder="{% if producer_count > 1 %}e.g., Producers may arrive separately, contact reception first{% else %}e.g., Leave at side door, call on arrival{% endif %}"
+                            >{{ customer_default_delivery_instructions }}</textarea>
                         </div>
+
+                        {% if can_create_recurring_orders %}
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" name="make_recurring">
+                                Make this a recurring order
+                            </label>
+                            <small class="form-help">
+                                Create a reusable weekly or fortnightly restaurant order template from this checkout.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurring_name">Recurring Order Name</label>
+                            <input
+                                type="text"
+                                name="recurring_name"
+                                id="recurring_name"
+                                class="checkout-input"
+                                value="Weekly Restaurant Order"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurrence_interval">Recurrence</label>
+                            <select name="recurrence_interval" id="recurrence_interval" class="checkout-input">
+                                {% for value, label in recurrence_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order_weekday">Place Order Every</label>
+                            <select name="order_weekday" id="order_weekday" class="checkout-input">
+                                {% for value, label in weekday_choices %}
+                                <option value="{{ value }}" {% if value == 0 %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery_weekday">Deliver Every</label>
+                            <select name="delivery_weekday" id="delivery_weekday" class="checkout-input">
+                                {% for value, label in weekday_choices %}
+                                <option value="{{ value }}" {% if value == 2 %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-help">
+                                Delivery day must be at least 48 hours after the order day.
+                            </small>
+                        </div>
+                        {% endif %}
 
                         <div class="checkout-actions">
                             <button type="submit" class="checkout-action-btn">
-                                <i class="bi bi-check-circle"></i> Place Order (£{{ total_price }})
+                                <i class="bi bi-check-circle"></i> Place Order (&pound;{{ total_price }})
                             </button>
 
                             <a href="{% url 'cart:view_cart' %}" class="checkout-action-btn">
@@ -109,7 +236,7 @@
                             {% for item in items %}
                                 <div class="summary-line">
                                     <span>{{ item.quantity }}x {{ item.product.name }}</span>
-                                    <span>£{{ item.subtotal }}</span>
+                                    <span>&pound;{{ item.subtotal }}</span>
                                 </div>
                             {% endfor %}
                         </div>
@@ -117,7 +244,7 @@
 
                     <div class="summary-total">
                         <span>Total</span>
-                        <strong>£{{ total_price }}</strong>
+                        <strong>&pound;{{ total_price }}</strong>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Recurring Orders{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/recurring_orders.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="recurring-container">
+    <div class="recurring-header">
+        <div>
+            <h1>Recurring Orders</h1>
+            <p>Manage your restaurant order templates and the next scheduled checkout for each one.</p>
+        </div>
+        <a href="{% url 'orders:order_history' %}" class="recurring-link-btn">
+            <i class="bi bi-arrow-left"></i> Back to Orders
+        </a>
+    </div>
+
+    {% if recurring_orders_data %}
+        <div class="recurring-grid">
+            {% for entry in recurring_orders_data %}
+            <div class="recurring-card">
+                <div class="recurring-card-header">
+                    <div>
+                        <h3>{{ entry.recurring_order.template_name|default:"Recurring Order" }}</h3>
+                        <p>{{ entry.recurring_order.get_recurrence_interval_display }} on {{ entry.recurring_order.order_weekday_label }} with delivery every {{ entry.recurring_order.delivery_weekday_label }}</p>
+                    </div>
+                    <span class="status-pill status-{{ entry.recurring_order.status|lower }}">
+                        {{ entry.recurring_order.get_status_display }}
+                    </span>
+                </div>
+
+                <div class="recurring-card-body">
+                    <div class="recurring-meta">
+                        <div>
+                            <span class="meta-label">Next Order Day</span>
+                            <strong>{{ entry.recurring_order.next_order_date|date:"F d, Y" }}</strong>
+                        </div>
+                        <div>
+                            <span class="meta-label">Next Delivery Day</span>
+                            <strong>{{ entry.recurring_order.next_delivery_date|date:"F d, Y" }}</strong>
+                        </div>
+                        <div>
+                            <span class="meta-label">Upcoming Total</span>
+                            <strong>&pound;{{ entry.total }}</strong>
+                        </div>
+                    </div>
+
+                    {% if entry.unavailable_items %}
+                    <div class="recurring-warning">
+                        {% for item in entry.unavailable_items %}
+                        <div>{{ item }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="recurring-summary">
+                        {% for producer, data in entry.items_by_producer.items %}
+                        <div class="recurring-summary-row">
+                            <span>{{ producer.username }}</span>
+                            <span>&pound;{{ data.subtotal }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="recurring-card-footer">
+                    <a href="{% url 'orders:recurring_order_detail' entry.recurring_order.id %}" class="recurring-link-btn">
+                        <i class="bi bi-calendar-week"></i> Manage Template
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="recurring-empty">
+            <h3>No recurring orders yet</h3>
+            <p>Create one from checkout the next time you place a restaurant order.</p>
+            <a href="{% url 'catalog:product_list' %}" class="recurring-link-btn">
+                <i class="bi bi-shop"></i> Browse Products
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
