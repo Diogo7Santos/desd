@@ -734,15 +734,9 @@ def order_detail(request, order_id):
     items_by_producer = _attach_customer_review_state(items_by_producer, request.user)
 
     context = {
-<<<<<<< HEAD
         'order': order,
         'items_by_producer': items_by_producer,
         'payment_status': _payment_status_for_order(order),
-=======
-        "order": order,
-        "items_by_producer": items_by_producer,
-        "show_recurring_orders_link": _can_manage_recurring_orders(request.user),
->>>>>>> 61745ab (update food miles and review and feedback)
     }
 
     return render(request, "orders/order_detail.html", context)
@@ -754,7 +748,6 @@ def reorder(request, order_id):
     """
     TC-021: Copy previous order items to cart.
     """
-<<<<<<< HEAD
     order = get_object_or_404(
         Order.objects.exclude(status=Order.Status.PENDING_PAYMENT),
         id=order_id,
@@ -764,11 +757,6 @@ def reorder(request, order_id):
     # Get or create cart
     cart, created = Cart.objects.get_or_create(user=request.user)
     
-=======
-    order = get_object_or_404(Order, id=order_id, customer=request.user)
-    cart, _created = Cart.objects.get_or_create(user=request.user)
-
->>>>>>> 61745ab (update food miles and review and feedback)
     added_count = 0
     unavailable_items = []
 
